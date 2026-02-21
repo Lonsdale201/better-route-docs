@@ -102,8 +102,8 @@ const config: Config = {
       copyright: `Copyright (c) ${new Date().getFullYear()} Better Route. Built with Docusaurus.`,
     },
     prism: {
-      theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
+      theme: prismThemes.nightOwlLight,
+      darkTheme: prismThemes.nightOwl,
     },
   } satisfies Preset.ThemeConfig,
 };
