@@ -51,7 +51,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'img/better-route-docs-social.webp',
     colorMode: {
       defaultMode: 'light',
       disableSwitch: true,
