@@ -3,6 +3,7 @@
 Official documentation site for the `better-route` WordPress PHP library.
 
 [![Back to better-route repository](https://img.shields.io/badge/Back%20to-better--route-0d5bd7?style=for-the-badge)](https://github.com/Lonsdale201/better-route)
+[![Open documentation](https://img.shields.io/badge/Open-Documentation-1f9d55?style=for-the-badge)](https://lonsdale201.github.io/better-route-docs/)
 
 ## What is this?
 
