@@ -1,41 +1,25 @@
-# Website
+# better-route-docs
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+Official documentation site for the `better-route` WordPress PHP library.
 
-## Installation
+[![Back to better-route repository](https://img.shields.io/badge/Back%20to-better--route-0d5bd7?style=for-the-badge)](https://github.com/Lonsdale201/better-route)
 
-```bash
-yarn
-```
+## What is this?
 
-## Local Development
+This repository contains the public documentation website only:
 
-```bash
-yarn start
-```
+- architecture and API guides
+- middleware and OpenAPI usage
+- scenarios and reference pages
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+This is not the library source repository.
 
-## Build
+## Library source
 
-```bash
-yarn build
-```
+Main library repository:
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+- https://github.com/Lonsdale201/better-route
 
-## Deployment
+## Live documentation
 
-Using SSH:
-
-```bash
-USE_SSH=true yarn deploy
-```
-
-Not using SSH:
-
-```bash
-GIT_USER=<Your GitHub username> yarn deploy
-```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+- https://lonsdale201.github.io/better-route-docs/
