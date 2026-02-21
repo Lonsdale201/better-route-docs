@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'Better Route Docs',
   tagline: 'Documentation for the Better Route WordPress PHP library',
-  favicon: 'img/better-route-favicon.webp',
+  favicon: 'img/better-route-favicon.ico',
 
   future: {
     v4: true,
