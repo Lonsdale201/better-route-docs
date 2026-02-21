@@ -9,26 +9,24 @@ title: Installation
 
 ## Composer setup
 
-`better-route` is currently documented at `v0.1.0` baseline, but package publishing is not live yet.
-
-Use local/path repository setup during development:
+Use VCS repository setup from the public GitHub repository:
 
 ```json
 {
   "require": {
-    "better-route/better-route": "*"
+    "better-route/better-route": "^0.1.1"
   },
   "repositories": [
     {
-      "type": "path",
-      "url": "../../../libraries/better-route",
-      "options": { "symlink": true }
+      "type": "vcs",
+      "url": "https://github.com/Lonsdale201/better-route"
     }
-  ]
+  ],
+  "prefer-stable": true
 }
 ```
 
-After publishing, switch to a normal constraint, for example:
+After package index publication, you can remove the `repositories` block and keep only `require`.
 
 ```json
 {
