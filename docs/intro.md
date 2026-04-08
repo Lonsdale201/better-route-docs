@@ -1,4 +1,4 @@
-﻿---
+---
 title: better-route Documentation
 sidebar_position: 1
 ---
@@ -7,10 +7,10 @@ sidebar_position: 1
 
 ## Status
 
-- Baseline documentation target: `v0.1.0`
-- Current code constant: `0.1.0-dev` (`BetterRoute\Support\Version::VERSION`)
+- Baseline documentation target: `v0.2.0`
+- Current code constant: `0.2.0` (`BetterRoute\Support\Version::VERSION`)
 - Packagist/package index release: not published yet
-- Dedicated WooCommerce abstraction layer: not available yet
+- Dedicated WooCommerce abstraction layer: available since v0.2.0
 
 ## What you get
 
@@ -20,19 +20,21 @@ sidebar_position: 1
 - Strict query contract (`unknown params => 400`)
 - Unified error envelope with `requestId`
 - Built-in auth, write-safety, and observability middleware building blocks
-- OpenAPI MVP exporter and optional `openapi.json` endpoint
+- OpenAPI MVP exporter with security scheme support and optional `openapi.json` endpoint
+- WooCommerce integration: Orders, Products, Customers, Coupons with full CRUD, query parsing, HPOS guard, and pre-built OpenAPI component schemas
 
 ## Who this is for
 
 - WordPress teams building headless APIs
 - Plugin/app teams that want contract-first endpoints
 - Integrations where schema, error shape, and policy behavior must stay predictable
+- WooCommerce stores that need a typed, middleware-aware REST layer over core WC data
 
 ## What this is not
 
 - Not a UI plugin with admin pages
 - Not a no-code endpoint builder
-- Not Woo-specific routing abstraction (yet)
+- Not a WooCommerce replacement — it exposes WC data through a stricter contract
 
 ## Documentation map
 
@@ -41,5 +43,8 @@ Start with:
 1. `Getting Started` for install + first route/resource
 2. `Core` for router, middleware lifecycle, error contract
 3. `Resources` for CPT/table DSL and query safety
-4. `OpenAPI` for schema export and endpoint publishing
-5. `Reference` for API tables and middleware catalog
+4. `Auth` for JWT, application passwords, cookie/nonce, bearer token
+5. `WooCommerce` for orders, products, customers, coupons integration
+6. `OpenAPI` for schema export, security schemes, and endpoint publishing
+7. `Reference` for API tables and middleware catalog
+8. `AI Agent Skills` for structured skills an AI agent can use to work with the library

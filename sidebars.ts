@@ -40,6 +40,19 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'WooCommerce',
+      items: [
+        'woocommerce/overview',
+        'woocommerce/configuration',
+        'woocommerce/orders',
+        'woocommerce/products',
+        'woocommerce/customers',
+        'woocommerce/coupons',
+        'woocommerce/openapi-components',
+      ],
+    },
+    {
+      type: 'category',
       label: 'OpenAPI',
       items: ['openapi/overview', 'openapi/exporter', 'openapi/openapi-endpoint'],
     },
@@ -48,6 +61,7 @@ const sidebars: SidebarsConfig = {
       label: 'Scenarios',
       items: ['scenarios/common-scenarios'],
     },
+    'agents',
     {
       type: 'category',
       label: 'Reference',

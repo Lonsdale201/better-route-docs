@@ -55,7 +55,7 @@ OpenApiRouteRegistrar::register(
         $articlesResource,
         $rawArticlesResource,
     ]),
-    options: ['title' => 'Better Route API', 'version' => 'v0.1.0']
+    options: ['title' => 'Better Route API', 'version' => 'v0.2.0']
 );
 ```
 

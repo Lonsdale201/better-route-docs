@@ -53,7 +53,7 @@ OpenApiRouteRegistrar::register(
     ],
     options: [
         'title' => 'better-route API',
-        'version' => 'v0.1.0',
+        'version' => 'v0.2.0',
         'serverUrl' => '/wp-json',
     ]
 );

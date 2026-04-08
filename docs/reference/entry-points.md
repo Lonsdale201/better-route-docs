@@ -20,11 +20,28 @@ Usage:
 
 ```php
 $exporter = BetterRoute::openApiExporter();
-$document = $exporter->export($contracts, ['version' => 'v0.1.0']);
+$document = $exporter->export($contracts, ['version' => 'v0.2.0']);
+```
+
+### `BetterRoute::wooRouteRegistrar(): WooRouteRegistrar`
+
+Usage:
+
+```php
+$router = BetterRoute::wooRouteRegistrar()
+    ->register('myapp/v1');
+```
+
+### `BetterRoute::wooOpenApiComponents(): array`
+
+Returns pre-built OpenAPI component schemas for all WooCommerce resources.
+
+```php
+$components = BetterRoute::wooOpenApiComponents();
 ```
 
 ## Version marker
 
-`BetterRoute\Support\Version::VERSION` currently returns `0.1.0-dev`.
+`BetterRoute\Support\Version::VERSION` currently returns `0.2.0`.
 
-Recommended docs positioning: baseline `v0.1.0` behavior with dev suffix awareness.
+Recommended docs positioning: baseline `v0.2.0` behavior.

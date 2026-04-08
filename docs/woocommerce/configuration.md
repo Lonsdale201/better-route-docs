@@ -1,0 +1,97 @@
+---
+title: Configuration
+---
+
+`WooRouteRegistrar::register()` accepts an options array that controls every aspect of the WooCommerce layer.
+
+## Minimal example
+
+```php
+$router = \BetterRoute\BetterRoute::wooRouteRegistrar()
+    ->register('myplugin/v1');
+```
+
+## Full options
+
+```php
+$router = \BetterRoute\BetterRoute::wooRouteRegistrar()
+    ->register('myplugin/v1', [
+        'basePath'       => '/woo',
+        'requireHpos'    => true,
+        'defaultPerPage' => 20,
+        'maxPerPage'     => 100,
+        'permissions'    => [
+            'orders'    => 'manage_woocommerce',
+            'products'  => 'manage_woocommerce',
+            'customers' => 'manage_woocommerce',
+            'coupons'   => 'manage_woocommerce',
+        ],
+        'actions' => [
+            'orders'    => ['list', 'get', 'create', 'update', 'delete'],
+            'products'  => ['list', 'get', 'create', 'update', 'delete'],
+            'customers' => ['list', 'get', 'create', 'update', 'delete'],
+            'coupons'   => ['list', 'get', 'create', 'update', 'delete'],
+        ],
+        'idempotency' => [
+            'enabled'    => false,
+            'requireKey' => false,
+            'ttlSeconds' => 300,
+            'store'      => null,
+            'resources'  => [
+                'orders'    => true,
+                'products'  => true,
+                'customers' => true,
+                'coupons'   => true,
+            ],
+        ],
+    ]);
+```
+
+## Option reference
+
+**basePath** (string, default `'/woo'`)
+URL prefix for all WooCommerce routes. Set to `/shop` to get `/wp-json/vendor/v1/shop/orders`.
+
+**requireHpos** (bool, default `true`)
+When true, the HPOS guard returns `409 hpos_required` if HPOS is not enabled. Set to `false` if you support legacy post-based orders.
+
+**defaultPerPage** (int, default `20`)
+Default number of items returned by list endpoints when `per_page` is not specified.
+
+**maxPerPage** (int, default `100`)
+Upper cap for `per_page`. Values above this are silently clamped.
+
+**permissions** (array)
+Per-resource capability string. The capability is checked via `current_user_can()` before every handler.
+
+**actions** (array)
+Per-resource list of enabled actions. Omit an action to disable its route entirely. Valid values: `list`, `get`, `create`, `update`, `delete`.
+
+**idempotency** (array)
+Controls the `IdempotencyMiddleware` on POST/PUT/PATCH routes.
+
+- `enabled`: master switch (default `false`)
+- `requireKey`: if true, POST/PUT/PATCH without `Idempotency-Key` header returns `400` (default `false`)
+- `ttlSeconds`: how long a cached response is kept (default `300`)
+- `store`: an `IdempotencyStoreInterface` instance. Defaults to `TransientIdempotencyStore` in production, `ArrayIdempotencyStore` in tests
+- `resources`: per-resource toggle — set to `false` to disable idempotency for a specific resource
+
+## Read-only store example
+
+```php
+$router = \BetterRoute\BetterRoute::wooRouteRegistrar()
+    ->register('myplugin/v1', [
+        'actions' => [
+            'orders'   => ['list', 'get'],
+            'products' => ['list', 'get'],
+        ],
+    ]);
+```
+
+This exposes only GET endpoints. No create/update/delete routes are registered.
+
+## Common mistakes
+
+- Setting `basePath` to an empty string — it defaults back to `/woo`
+- Enabling `requireHpos` on a site without WooCommerce — the guard returns `503` before any handler runs
+- Forgetting that `maxPerPage` must be >= `defaultPerPage`

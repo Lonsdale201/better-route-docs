@@ -2,7 +2,7 @@
 title: OpenAPI Overview
 ---
 
-OpenAPI support is metadata-driven MVP in `v0.1.0` baseline.
+OpenAPI support is metadata-driven. Since `v0.2.0` it includes security scheme support and pre-built WooCommerce domain schemas.
 
 ## What is available
 
@@ -26,7 +26,12 @@ OpenAPI support is metadata-driven MVP in `v0.1.0` baseline.
 
 - full automatic schema inference from arbitrary PHP runtime types
 - advanced polymorphism/discriminator generation
-- dedicated WooCommerce domain schema presets
+
+## What is new in v0.2.0
+
+- Security scheme support: Bearer, Basic Auth, API Key, OAuth2, Cookie
+- Global and per-route security requirements
+- Pre-built WooCommerce domain schemas via `BetterRoute::wooOpenApiComponents()` (see WooCommerce > OpenAPI Components)
 
 ## Validation checklist
 

@@ -8,7 +8,7 @@ No. It is a Composer library for API contract and middleware composition.
 
 ## Is WooCommerce supported with dedicated abstractions?
 
-Not yet. You can still integrate Woo data via custom handlers/resources, but no dedicated Woo layer exists in `v0.1.0` baseline.
+Yes, since `v0.2.0`. The WooCommerce integration layer provides full CRUD for Orders, Products, Customers, and Coupons with query parsing, HPOS guard, and pre-built OpenAPI schemas. See the WooCommerce section for details.
 
 ## Is package registry publishing available now?
 

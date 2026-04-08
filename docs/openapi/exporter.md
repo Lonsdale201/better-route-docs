@@ -16,7 +16,7 @@ $contracts = array_merge(
 
 $document = (new OpenApiExporter())->export($contracts, [
     'title' => 'better-route API',
-    'version' => 'v0.1.0',
+    'version' => 'v0.2.0',
     'description' => 'Contract-first API',
     'serverUrl' => '/wp-json',
     'openapiVersion' => '3.1.0',
