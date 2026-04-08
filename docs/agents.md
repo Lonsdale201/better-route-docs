@@ -5,6 +5,48 @@ sidebar_position: 99
 
 This page defines structured skills an AI agent needs to work effectively with the `better-route` library. Each skill describes a specific capability, when to use it, and the exact steps or API surface involved.
 
+## Skill: Install better-route
+
+**When:** The user wants to add `better-route` to a WordPress project.
+
+**Requirements:**
+- PHP `^8.1`
+- WordPress with REST API (`rest_api_init` hook)
+- Composer
+
+**Steps:**
+1. The package is not on Packagist yet. It must be installed via VCS repository pointing to GitHub.
+2. Add the repository and require the package in `composer.json`.
+3. Run `composer install` or `composer update`.
+
+**composer.json:**
+```json
+{
+  "require": {
+    "better-route/better-route": "^0.2.0"
+  },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/Lonsdale201/better-route"
+    }
+  ],
+  "prefer-stable": true
+}
+```
+
+**Verification:**
+```bash
+composer show better-route/better-route
+```
+
+**Rules:**
+- The `repositories` block is required until the package is published on Packagist.
+- All route registration must happen inside a `rest_api_init` action hook.
+- Available quality commands: `composer test`, `composer analyse`, `composer cs-check`.
+
+---
+
 ## Skill: Register WooCommerce routes
 
 **When:** The user wants to expose WooCommerce data (orders, products, customers, coupons) via REST API.
