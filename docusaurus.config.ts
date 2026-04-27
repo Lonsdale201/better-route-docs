@@ -3,8 +3,8 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
-  title: 'Better Route Docs',
-  tagline: 'Documentation for the Better Route WordPress PHP library',
+  title: 'Better Docs',
+  tagline: 'Documentation for the better-route and better-data WordPress PHP libraries',
   favicon: 'img/better-route-favicon.ico',
 
   future: {
@@ -12,10 +12,10 @@ const config: Config = {
   },
 
   url: 'https://lonsdale201.github.io',
-  baseUrl: '/better-route-docs/',
+  baseUrl: '/better-docs/',
 
   organizationName: 'Lonsdale201',
-  projectName: 'better-route-docs',
+  projectName: 'better-docs',
 
   onBrokenLinks: 'throw',
 
@@ -30,7 +30,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/Lonsdale201/better-route-docs/tree/main/',
+          editUrl: 'https://github.com/Lonsdale201/better-docs/tree/main/',
         },
         blog: {
           showReadingTime: true,
@@ -38,7 +38,7 @@ const config: Config = {
             type: ['rss', 'atom'],
             xslt: true,
           },
-          editUrl: 'https://github.com/Lonsdale201/better-route-docs/tree/main/',
+          editUrl: 'https://github.com/Lonsdale201/better-docs/tree/main/',
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
           onUntruncatedBlogPosts: 'warn',
@@ -51,16 +51,16 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/better-route-docs-social.webp',
+    image: 'img/better-docs-social.webp',
     colorMode: {
       defaultMode: 'light',
       disableSwitch: true,
       respectPrefersColorScheme: false,
     },
     navbar: {
-      title: 'Better Route Docs',
+      title: 'Better Docs',
       logo: {
-        alt: 'Better Route Logo',
+        alt: 'Better Docs Logo',
         src: 'img/better-route-logo.webp',
       },
       items: [
@@ -99,7 +99,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright (c) ${new Date().getFullYear()} Better Route. Built with Docusaurus.`,
+      copyright: `Copyright (c) ${new Date().getFullYear()} Soczó Kristóf. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.nightOwlLight,
