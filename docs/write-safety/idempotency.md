@@ -18,13 +18,36 @@ $idempotency = new IdempotencyMiddleware(
 );
 ```
 
+## Persistent store (v0.3.0)
+
+`WpdbIdempotencyStore` persists state to a custom `wpdb` table — useful when the object cache flushes or doesn't survive restarts. Install the schema once (typically on plugin activation):
+
+```php
+use BetterRoute\Middleware\Write\IdempotencyMiddleware;
+use BetterRoute\Middleware\Write\WpdbIdempotencyStore;
+
+register_activation_hook(__FILE__, function (): void {
+    (new WpdbIdempotencyStore())->installSchema();
+});
+
+$idempotency = new IdempotencyMiddleware(
+    store: new WpdbIdempotencyStore(),
+    ttlSeconds: 600,
+    requireKey: true
+);
+```
+
+Cross-database table names (containing `.`) are rejected at the storage boundary.
+
 ## How it works
 
 - reads `Idempotency-Key` header
-- builds store key from route + idempotency key
+- builds store key from route + idempotency key + identity (v0.3.0: `auth.userId` or `auth.subject`, falling back to `'guest'`)
 - hashes request fingerprint (method + route + params/body/json)
 - on replay with same fingerprint: returns cached response
 - on replay with different fingerprint: `409 idempotency_conflict`
+
+Pass an explicit `keyResolver` to override the default identity-aware key.
 
 Replayed `Response` gets header:
 

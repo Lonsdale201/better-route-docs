@@ -23,8 +23,11 @@ This registers all four resource groups under `/wp-json/myplugin/v1/woo/`.
 - Pagination with `page` / `per_page` and `X-WP-Total` / `X-WP-TotalPages` headers
 - Sortable lists with `?sort=-date_created` (prefix `-` for DESC)
 - Optional HPOS guard: 503 if WooCommerce unavailable, 409 if HPOS required but disabled
-- Optional idempotency middleware on write endpoints
+- Optional idempotency middleware on write endpoints (transient-, array-, or `wpdb`-backed)
 - OpenAPI component schemas via `BetterRoute::wooOpenApiComponents()`
+- *(v0.3.0)* configurable `deleteMode` (`'force'` or `'trash'`) for orders / products / coupons
+- *(v0.3.0)* customer endpoints restricted to the `customer` role; create/update/delete gated by `create_users` / `edit_user` / `delete_user`
+- *(v0.3.0)* protected meta keys (`_...`) hidden from output and rejected on write by default
 
 ## Architecture
 

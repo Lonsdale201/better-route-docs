@@ -65,3 +65,8 @@ Allowed sort fields: `date_created`, `date_modified`, `id`, `code`
 - `product_ids` and `excluded_product_ids` are arrays of integers.
 - `email_restrictions` is an array of email address strings.
 - `date_expires` accepts an ISO date string or `null`.
+
+## v0.3.0 changes
+
+- `deleteMode` (`'force'` default or `'trash'`) on the registrar controls whether `DELETE` permanently removes or trashes the coupon.
+- Protected meta keys (`_...`) are not returned and not writable by default.

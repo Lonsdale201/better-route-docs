@@ -11,7 +11,7 @@ title: Request, Response, and Errors
 - original WP request object
 - internal attributes (`withAttribute()`)
 
-`requestId` comes from `x-request-id` header if present, otherwise generated.
+`requestId` comes from the `x-request-id` header if it matches `^[A-Za-z0-9._:-]{1,128}$` *(sanitized in v0.3.0)*; otherwise a fresh id is generated.
 
 ## Response forms
 
@@ -42,8 +42,8 @@ Handlers may return:
 ## Exception mapping
 
 - `ApiException`: status/errorCode/details preserved
-- `InvalidArgumentException`: `400` with `invalid_request`
-- other throwables: `500` with `internal_error`
+- `InvalidArgumentException`: `400` with `invalid_request`; `details.exception` includes the class name (developer aid)
+- other throwables: `500` with `internal_error`; **message normalized to `"Unexpected error."`** and `details` is empty *(v0.3.0)* — internal exception class and message no longer leak
 
 ## Common mistakes
 

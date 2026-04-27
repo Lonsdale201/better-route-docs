@@ -14,7 +14,7 @@ Use VCS repository setup from the public GitHub repository:
 ```json
 {
   "require": {
-    "better-route/better-route": "^0.2.0"
+    "better-route/better-route": "^0.3.0"
   },
   "repositories": [
     {
@@ -43,6 +43,8 @@ composer test
 composer analyse
 composer cs-check
 ```
+
+Composer scripts run tools through `php vendor/bin/...` so missing executable bits on shared mounts no longer break CI/local runs.
 
 ## Validation checklist
 

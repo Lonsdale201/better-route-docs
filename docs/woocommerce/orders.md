@@ -82,3 +82,14 @@ When `set_paid` is `true`, `payment_complete()` is called after save. This trigg
 ## Address fields
 
 Both `billing` and `shipping` accept: first_name, last_name, company, address_1, address_2, city, state, postcode, country, email, phone.
+
+## Delete mode (v0.3.0)
+
+Configurable via `deleteMode` on the registrar:
+
+- `'force'` (default) — permanently deletes the order via `wp_delete_post(..., true)`
+- `'trash'` — sends the order to the trash so it can be restored from WP admin
+
+## Protected meta keys (v0.3.0)
+
+Meta keys starting with `_` (e.g., `_order_total`, `_payment_method_title`) are not returned in responses and are rejected on write by default.

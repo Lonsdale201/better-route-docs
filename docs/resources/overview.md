@@ -39,6 +39,24 @@ Resource::make('articles')
 - unknown query params return `400 validation_failed`
 - field allowlist enforced for projections and writes
 - pagination limits enforced (`defaultPerPage`, `maxPerPage`, `maxOffset`)
+- *(v0.3.0)* table resources are deny-by-default — configure a `policy()` (or `ResourcePolicy` preset) before they accept any traffic
+- *(v0.3.0)* `id` is always read from URL route params first; query/body `id` is only consulted as a fallback
+
+## Write validation (v0.3.0)
+
+Use `writeSchema()` (alias `payloadSchema()`) to validate, coerce, and sanitize incoming POST/PUT/PATCH bodies. Combine with `fieldPolicy()` for per-field write authorization. See [Resource API Reference](../reference/resource-api) for the full rule set.
+
+```php
+Resource::make('books')
+    ->sourceCpt('book')
+    ->writeSchema([
+        'title' => ['type' => 'string', 'required' => true, 'maxLength' => 200, 'sanitize' => 'text'],
+        'price' => ['type' => 'float', 'min' => 0],
+    ])
+    ->fieldPolicy([
+        'featured' => static fn () => current_user_can('manage_options'),
+    ]);
+```
 
 ## Common mistakes
 

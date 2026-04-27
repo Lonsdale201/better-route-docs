@@ -50,3 +50,14 @@ $router->middlewareFactory(function (string $class): mixed {
 - middleware with ctor args is resolved by factory
 - short-circuit does not execute handler
 - thrown exceptions are normalized to error envelope
+
+## Identity-aware default keys (v0.3.0)
+
+`CachingMiddleware`, `IdempotencyMiddleware`, and `RateLimitMiddleware` derive default keys from the request identity:
+
+- `auth.userId > 0` → `"{provider}:user:{userId}"`
+- `auth.subject` (non-empty) → `"{provider}:sub:{subject}"`
+- `RateLimitMiddleware` only: client IP fallback → `"ip:{clientIp}"`
+- otherwise → `"guest"`
+
+Pass an explicit `keyResolver` to keep pre-v0.3.0 keys.

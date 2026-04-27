@@ -65,3 +65,8 @@ Allowed sort fields: `date_created`, `date_modified`, `id`, `title`, `price`
 - `type` is create-only. It cannot be changed after creation. Defaults to `simple` when omitted.
 - Boolean fields (`manage_stock`, `virtual`, `downloadable`) accept booleans, integers (0/1), or strings (`"true"`, `"false"`, `"yes"`, `"no"`).
 - `stock_quantity` accepts an integer or `null`.
+
+## v0.3.0 changes
+
+- `deleteMode` (`'force'` default or `'trash'`) on the registrar controls whether `DELETE` permanently removes or trashes the product.
+- Protected meta keys (`_...`) are not returned and not writable by default.

@@ -33,6 +33,11 @@ OpenAPI support is metadata-driven. Since `v0.2.0` it includes security scheme s
 - Global and per-route security requirements
 - Pre-built WooCommerce domain schemas via `BetterRoute::wooOpenApiComponents()` (see WooCommerce > OpenAPI Components)
 
+## What is new in v0.3.0
+
+- `strictSchemas => true` exporter option — throws `InvalidArgumentException` on `$ref` to an unknown component instead of substituting a permissive placeholder
+- `OpenApiRouteRegistrar::register()` defaults to `current_user_can('manage_options')` — pass `permissionCallback` to override
+
 ## Validation checklist
 
 - every documented endpoint has stable `operationId`

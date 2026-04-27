@@ -7,21 +7,20 @@ sidebar_position: 1
 
 ## Status
 
-- Baseline documentation target: `v0.2.0`
-- Current code constant: `0.2.0` (`BetterRoute\Support\Version::VERSION`)
-- Packagist/package index release: not published yet
-- Dedicated WooCommerce abstraction layer: available since v0.2.0
+- Baseline documentation target: `v0.3.0`
+- Latest release: [`v0.3.0`](release-notes/v0.3.0)
+- Packagist/package index release: not published yet — install via VCS repository
 
 ## What you get
 
 - Fluent router on top of `register_rest_route()`
 - Middleware pipeline with deterministic order: `global -> group -> route`
-- Resource DSL for CPT and custom table endpoints
+- Resource DSL for CPT and custom table endpoints, with write-validation schemas, field-level policies, and `ResourcePolicy` presets
 - Strict query contract (`unknown params => 400`)
-- Unified error envelope with `requestId`
-- Built-in auth, write-safety, and observability middleware building blocks
-- OpenAPI MVP exporter with security scheme support and optional `openapi.json` endpoint
-- WooCommerce integration: Orders, Products, Customers, Coupons with full CRUD, query parsing, HPOS guard, and pre-built OpenAPI component schemas
+- Unified error envelope with `requestId` (no internal exception leakage on 5xx)
+- Built-in auth, write-safety, and observability middleware (JWT hardening with required `exp` and lifetime caps, identity-aware default keys for cache/idempotency/rate-limit, ETag, ClientIpResolver, WP object-cache and `wpdb`-backed stores)
+- OpenAPI MVP exporter with security scheme support, `strictSchemas` mode, and optional `openapi.json` endpoint (admin-only by default)
+- WooCommerce integration: Orders, Products, Customers, Coupons with full CRUD, query parsing, HPOS guard, capability-checked writes, protected meta keys, configurable `deleteMode`, and pre-built OpenAPI component schemas
 
 ## Who this is for
 
@@ -48,3 +47,4 @@ Start with:
 6. `OpenAPI` for schema export, security schemes, and endpoint publishing
 7. `Reference` for API tables and middleware catalog
 8. `AI Agent Skills` for structured skills an AI agent can use to work with the library
+9. `Release Notes` for what changed in each version

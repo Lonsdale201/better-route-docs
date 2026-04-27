@@ -68,3 +68,12 @@ Allowed sort fields: `registered_date`, `id`, `email`, `display_name`
 - `password` is write-only. It is never returned in responses.
 - Address fields (billing/shipping): first_name, last_name, company, address_1, address_2, city, state, postcode, country, email, phone.
 - Delete uses `wp_delete_user()` and permanently removes the WordPress user.
+
+## v0.3.0 restrictions
+
+- **Customer-only**: list/get/update/delete only work on users with the `customer` role. Non-customer users return `404` from `get` and are filtered out of `list`.
+- **Capability checks** layered on top of the configured `permissions`:
+  - `create` requires `create_users`
+  - `update` requires `edit_user`
+  - `delete` requires `delete_user`
+- **Protected meta keys** (`_...`) are not returned and not writable by default.

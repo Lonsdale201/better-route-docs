@@ -20,6 +20,7 @@ $router = \BetterRoute\BetterRoute::wooRouteRegistrar()
         'requireHpos'    => true,
         'defaultPerPage' => 20,
         'maxPerPage'     => 100,
+        'deleteMode'     => 'force', // v0.3.0; 'force' (default) or 'trash'
         'permissions'    => [
             'orders'    => 'manage_woocommerce',
             'products'  => 'manage_woocommerce',
@@ -73,8 +74,17 @@ Controls the `IdempotencyMiddleware` on POST/PUT/PATCH routes.
 - `enabled`: master switch (default `false`)
 - `requireKey`: if true, POST/PUT/PATCH without `Idempotency-Key` header returns `400` (default `false`)
 - `ttlSeconds`: how long a cached response is kept (default `300`)
-- `store`: an `IdempotencyStoreInterface` instance. Defaults to `TransientIdempotencyStore` in production, `ArrayIdempotencyStore` in tests
+- `store`: an `IdempotencyStoreInterface` instance. Defaults to `TransientIdempotencyStore` in production, `ArrayIdempotencyStore` in tests. Use `WpdbIdempotencyStore` for cross-flush persistence (v0.3.0).
 - `resources`: per-resource toggle — set to `false` to disable idempotency for a specific resource
+
+**deleteMode** (string, default `'force'`) *(v0.3.0)*
+Applies to orders, products, and coupons. `'force'` permanently deletes the entity; `'trash'` moves it to the trash so it can be restored.
+
+## v0.3.0 security defaults
+
+- **Customer endpoints are restricted to users with the `customer` role.** Lookups for non-customer users return `404`.
+- **Customer create/update/delete require WordPress user-management capabilities** (`create_users` / `edit_user` / `delete_user`) in addition to the configured `permissions` capability.
+- **Protected meta keys (starting with `_`) are not returned and not writable** by default. Pass `$allowProtected = true` at the call site only when intentional.
 
 ## Read-only store example
 

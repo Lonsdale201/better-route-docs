@@ -74,6 +74,11 @@ const sidebars: SidebarsConfig = {
         'reference/faq',
       ],
     },
+    {
+      type: 'category',
+      label: 'Release Notes',
+      items: ['release-notes/v0.3.0'],
+    },
   ],
 };
 

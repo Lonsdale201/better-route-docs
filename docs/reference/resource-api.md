@@ -20,6 +20,10 @@ title: Resource API Reference
 - `filterSchema(array $schema)`
 - `sort(array $sort)`
 - `policy(array $policy)`
+- `writeSchema(array $schema)` *(v0.3.0)* — alias of `payloadSchema()`
+- `payloadSchema(array $schema)` *(v0.3.0)* — write validation, coercion, sanitization
+- `fieldPolicy(array $policy)` *(v0.3.0)* — per-field write authorization
+- `deleteMode(string $mode)` *(v0.3.0)* — CPT only; `'force'` (default) or `'trash'`
 
 ## Pagination and envelope
 
@@ -53,6 +57,38 @@ Supported policy patterns:
 - `permissionCallback => callable`
 - `permissions => ['list' => true|false|string|array|callable, '*' => ...]`
 - `scopes => ['content:read', ...]`
+
+## ResourcePolicy presets (v0.3.0)
+
+`BetterRoute\Resource\ResourcePolicy` returns ready-to-pass policy arrays:
+
+- `ResourcePolicy::adminOnly(string $cap = 'manage_options'): array`
+- `ResourcePolicy::publicReadPrivateWrite(string|list<string> $writeCap = 'manage_options'): array`
+- `ResourcePolicy::capabilities(array $permissions): array`
+- `ResourcePolicy::callbacks(array $callbacks): array`
+
+```php
+$resource->policy(ResourcePolicy::publicReadPrivateWrite('edit_posts'));
+```
+
+## Table reads are deny-by-default (v0.3.0)
+
+Custom-table resources (`sourceTable()`) reject every action — including `list` and `get` — until a policy is configured. Use a `ResourcePolicy` preset or pass an explicit `permissions` array. CPT resources keep WordPress visibility for reads.
+
+## Write schema rule keys (v0.3.0)
+
+`writeSchema()` / `payloadSchema()` accept a map of field rules:
+
+- `type`: `'int'|'integer'|'float'|'number'|'bool'|'boolean'|'string'|'date'|'email'|'url'|'enum'|'array'|'object'|'mixed'`
+- `required`: `true` (enforced on `create`)
+- `nullable`: `true`
+- `min` / `max` (numeric)
+- `minLength` / `maxLength` (string)
+- `regex` (string; preg pattern)
+- `enum`: `['values' => [...]]`
+- `sanitize`: `'text'|'email'|'key'|'url'|callable`
+
+Validation failures return `400 validation_failed` with `details.fieldErrors` mapping each invalid field to its messages.
 
 ## Common example
 

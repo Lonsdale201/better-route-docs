@@ -66,3 +66,8 @@ add_action('rest_api_init', function (): void {
 - middleware order is `global -> group -> route`
 - generated route URIs are normalized (`/x` not `//x/`)
 - `contracts(true)` excludes `openapi.include=false`
+
+## v0.3.0 behavior changes
+
+- Inbound `X-Request-ID` is accepted only if it matches `^[A-Za-z0-9._:-]{1,128}$`. Anything else is replaced with a generated `req_<hex>` id.
+- For Resource and Woo handlers, `id` is read from URL route params first; query/body `id` is consulted only when the URL does not provide one.

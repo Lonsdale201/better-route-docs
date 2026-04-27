@@ -8,6 +8,7 @@ CPT resources map a post type to REST endpoints with policy and visibility contr
 
 ```php
 use BetterRoute\Resource\Resource;
+use BetterRoute\Resource\ResourcePolicy;
 
 Resource::make('articles')
     ->restNamespace('better-route/v1')
@@ -22,18 +23,12 @@ Resource::make('articles')
         'before' => 'date',
     ])
     ->cptVisibleStatuses(['publish'])
-    ->policy([
-        'permissions' => [
-            'list' => true,
-            'get' => true,
-            'create' => 'edit_posts',
-            'update' => 'edit_posts',
-            'delete' => 'delete_posts',
-        ],
-        'scopes' => ['content:*'],
-    ])
+    ->deleteMode('trash') // v0.3.0; 'force' (default) or 'trash'
+    ->policy(ResourcePolicy::publicReadPrivateWrite('edit_posts'))
     ->register();
 ```
+
+The raw `policy([...])` form is still supported when finer-grained control is needed. `ResourcePolicy` presets cover most cases.
 
 ## Visibility model
 
@@ -47,11 +42,20 @@ Resource::make('articles')
 - Keep `permissions.get/list = true`
 - Draft rows return `404 not_found` even when ID exists
 
+## Delete mode (v0.3.0)
+
+`deleteMode('trash')` routes `DELETE` through `wp_trash_post()` so rows can be restored from the WP trash. `deleteMode('force')` (default) calls `wp_delete_post(..., true)` and removes the row immediately.
+
+## Capability-checked writes (v0.3.0)
+
+CPT writes are validated against WordPress capabilities for publish, status transitions, author changes, and deletes. A user with only `edit_posts` cannot publish or change author without the matching capability — even if the policy allowed `update`.
+
 ## Common mistakes
 
 - Allowing `status` filter but forgetting to declare schema enum
 - Exposing draft/private without explicit decision
-- Expecting `delete` to soft-delete (current implementation uses force delete)
+- Forgetting to set `deleteMode('trash')` when the UX expects WP-style restore
+- Granting `update` via policy but expecting publish/author changes without the underlying WP capability
 
 ## Validation checklist
 

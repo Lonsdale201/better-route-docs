@@ -4,10 +4,15 @@ title: Table Resource
 
 Table resources map custom DB tables through `WordPressTableRepository`/`WpdbAdapter`.
 
+## Deny-by-default (v0.3.0)
+
+**Table resources reject every action — including `list` and `get` — until a `policy()` is configured.** This is the most important behavioral change in v0.3.0 for table-backed endpoints. Use a `ResourcePolicy` preset or supply an explicit `permissions` array.
+
 ## Minimal example
 
 ```php
 use BetterRoute\Resource\Resource;
+use BetterRoute\Resource\ResourcePolicy;
 
 Resource::make('raw-articles')
     ->restNamespace('better-route/v1')
@@ -23,6 +28,7 @@ Resource::make('raw-articles')
     ->sort(['created_at', 'id'])
     ->maxPerPage(100)
     ->maxOffset(5000)
+    ->policy(ResourcePolicy::adminOnly('manage_options'))
     ->register();
 ```
 
@@ -33,6 +39,8 @@ Resource::make('raw-articles')
 - identifier validation for table/field/sort names
 - prepared statements for values
 - prefixed table resolution via `$wpdb->prefix`
+- *(v0.3.0)* cross-database table names (containing `.`) are rejected
+- *(v0.3.0)* structured (array/object) write payloads are rejected at the storage boundary
 
 ## Scenario: ingestion rows with typed filters
 
@@ -44,6 +52,8 @@ Resource::make('raw-articles')
 - Missing `fields()` (required for table resources)
 - Using invalid SQL identifiers in field names
 - Assuming unknown query params are ignored
+- *(v0.3.0)* skipping `policy()` — every action returns `403` without an explicit policy
+- *(v0.3.0)* attempting to reference a foreign database via `other_db.table` — rejected at the adapter layer
 
 ## Validation checklist
 

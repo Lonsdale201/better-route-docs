@@ -4,6 +4,16 @@ title: openapi.json Endpoint
 
 Use `OpenApiRouteRegistrar` to expose API docs as REST endpoint.
 
+## Default permission (v0.3.0)
+
+Since v0.3.0, the endpoint defaults to `current_user_can('manage_options')` — the doc is admin-only out of the box. To restore the v0.2.0 public default, pass an explicit `permissionCallback`:
+
+```php
+options: [
+    'permissionCallback' => static fn (): bool => true,
+]
+```
+
 ## Minimal example
 
 ```php
@@ -17,16 +27,16 @@ OpenApiRouteRegistrar::register(
     ]),
     options: [
         'title' => 'better-route API',
-        'version' => 'v0.2.0',
+        'version' => 'v0.3.0',
         'serverUrl' => '/wp-json',
-        'permissionCallback' => static fn (): bool => true,
+        // 'permissionCallback' => static fn (): bool => true, // uncomment for public access
     ]
 );
 ```
 
 Endpoint result:
 
-- `GET /wp-json/better-route/v1/openapi.json`
+- `GET /wp-json/better-route/v1/openapi.json` (admin-only by default)
 
 ## contractsFromSources()
 

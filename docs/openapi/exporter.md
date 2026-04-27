@@ -16,10 +16,11 @@ $contracts = array_merge(
 
 $document = (new OpenApiExporter())->export($contracts, [
     'title' => 'better-route API',
-    'version' => 'v0.2.0',
+    'version' => 'v0.3.0',
     'description' => 'Contract-first API',
     'serverUrl' => '/wp-json',
     'openapiVersion' => '3.1.0',
+    'strictSchemas' => true, // v0.3.0; throws on unknown $ref components
     'components' => [
         'schemas' => [
             'Article' => ['type' => 'object'],
@@ -37,6 +38,7 @@ $document = (new OpenApiExporter())->export($contracts, [
 - `openapiVersion`
 - `includeExcluded`
 - `components`
+- `strictSchemas` *(v0.3.0)* — when `true`, missing component references throw `InvalidArgumentException` instead of being substituted with `{ type: 'object', additionalProperties: true }`
 
 ## Important behavior
 
