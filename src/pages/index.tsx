@@ -4,44 +4,98 @@ import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 import styles from './index.module.css';
 
-const quickLinks = [
-  {label: 'Installation', to: '/docs/getting-started/installation'},
-  {label: 'Quick Start', to: '/docs/getting-started/quick-start'},
-  {label: 'Router API', to: '/docs/reference/router-api'},
-  {label: 'Resource API', to: '/docs/reference/resource-api'},
-  {label: 'OpenAPI', to: '/docs/openapi/overview'},
-  {label: 'Scenarios', to: '/docs/scenarios/common-scenarios'},
+const betterRouteLinks = [
+  {label: 'Introduction', to: '/docs/better-route/intro'},
+  {label: 'Installation', to: '/docs/better-route/getting-started/installation'},
+  {label: 'Router API', to: '/docs/better-route/reference/router-api'},
+  {label: 'OpenAPI', to: '/docs/better-route/openapi/overview'},
+  {label: 'Release v0.3.0', to: '/docs/better-route/release-notes/v0.3.0'},
+];
+
+const betterDataLinks = [
+  {label: 'Introduction', to: '/docs/better-data/intro'},
+  {label: 'Installation', to: '/docs/better-data/getting-started/installation'},
+  {label: 'DataObject', to: '/docs/better-data/core/data-object'},
+  {label: 'Sources', to: '/docs/better-data/sources/overview'},
+  {label: 'Release v1.0.0', to: '/docs/better-data/release-notes/v1.0.0'},
+];
+
+const compositionLinks = [
+  {label: 'Overview', to: '/docs/composition/overview'},
+  {label: 'BetterRouteBridge', to: '/docs/composition/better-route-bridge'},
+  {label: 'OpenAPI together', to: '/docs/composition/openapi-with-both'},
 ];
 
 export default function Home(): ReactNode {
   return (
     <Layout
-      title="better-route docs"
-      description="Professional documentation for the better-route WordPress REST contract library.">
+      title="better-docs"
+      description="Documentation for the better-route and better-data WordPress PHP libraries.">
       <header className={styles.hero}>
         <div className="container">
-          <p className={styles.kicker}>v0.1 baseline documentation</p>
+          <p className={styles.kicker}>better-route v0.3.0 · better-data v1.0.0</p>
           <Heading as="h1" className={styles.title}>
-            better-route
+            Better Docs
           </Heading>
           <p className={styles.subtitle}>
-            Contract-first WordPress REST routing with middleware, resource DSL, and OpenAPI-ready metadata.
+            Two complementary WordPress PHP libraries — contract-first REST routing and
+            typed DTOs with security primitives. Use either alone, or compose them via the
+            BetterRouteBridge.
           </p>
           <div className={styles.ctaRow}>
-            <Link className="button button--primary button--lg" to="/docs/intro">
-              Read Documentation
+            <Link className="button button--primary button--lg" to="/docs/better-route/intro">
+              better-route
             </Link>
-            <Link className="button button--secondary button--lg" to="https://github.com/Lonsdale201/better-route">
-              GitHub Repository
+            <Link className="button button--primary button--lg" to="/docs/better-data/intro">
+              better-data
+            </Link>
+            <Link className="button button--secondary button--lg" to="/docs/composition/overview">
+              Composition
             </Link>
           </div>
         </div>
       </header>
       <main className={styles.main}>
         <section className="container">
-          <Heading as="h2">Quick navigation</Heading>
+          <Heading as="h2">better-route</Heading>
+          <p>
+            Composer-first WordPress REST contract layer — fluent router, middleware
+            pipeline, Resource DSL for CPTs and custom tables, full WooCommerce integration,
+            OpenAPI 3.1 export.
+          </p>
           <div className={styles.grid}>
-            {quickLinks.map((item) => (
+            {betterRouteLinks.map((item) => (
+              <Link key={item.to} className={styles.card} to={item.to}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="container">
+          <Heading as="h2">better-data</Heading>
+          <p>
+            PHP 8.3+ DTO and Presenter library — typed immutable data hydrated from posts,
+            users, terms, options, custom rows, and REST requests; symmetric write sinks;
+            context-aware presentation; Secret / #[Sensitive] / AES-256-GCM #[Encrypted].
+          </p>
+          <div className={styles.grid}>
+            {betterDataLinks.map((item) => (
+              <Link key={item.to} className={styles.card} to={item.to}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="container">
+          <Heading as="h2">Composition</Heading>
+          <p>
+            DTO-driven REST endpoints with auto-generated OpenAPI schemas — the
+            BetterRouteBridge wires better-data DTOs into a better-route Router.
+          </p>
+          <div className={styles.grid}>
+            {compositionLinks.map((item) => (
               <Link key={item.to} className={styles.card} to={item.to}>
                 {item.label}
               </Link>

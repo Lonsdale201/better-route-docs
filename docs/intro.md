@@ -1,50 +1,37 @@
 ---
-title: better-route Documentation
+title: Better Docs
 sidebar_position: 1
 ---
 
-`better-route` is a Composer-first WordPress REST contract layer for teams that need stable, versioned APIs.
+Documentation for two complementary WordPress PHP libraries:
 
-## Status
+## better-route
 
-- Baseline documentation target: `v0.3.0`
-- Latest release: [`v0.3.0`](release-notes/v0.3.0)
-- Packagist/package index release: not published yet — install via VCS repository
+Composer-first REST contract layer for teams that need stable, versioned APIs. Fluent router on top of `register_rest_route()`, middleware pipeline, Resource DSL for CPTs and custom tables, OpenAPI 3.1 export, and a full WooCommerce integration (Orders / Products / Customers / Coupons).
 
-## What you get
+- Latest release: **v0.3.0**
+- Source: [github.com/Lonsdale201/better-route](https://github.com/Lonsdale201/better-route)
+- Start here: [better-route Documentation](better-route/intro)
 
-- Fluent router on top of `register_rest_route()`
-- Middleware pipeline with deterministic order: `global -> group -> route`
-- Resource DSL for CPT and custom table endpoints, with write-validation schemas, field-level policies, and `ResourcePolicy` presets
-- Strict query contract (`unknown params => 400`)
-- Unified error envelope with `requestId` (no internal exception leakage on 5xx)
-- Built-in auth, write-safety, and observability middleware (JWT hardening with required `exp` and lifetime caps, identity-aware default keys for cache/idempotency/rate-limit, ETag, ClientIpResolver, WP object-cache and `wpdb`-backed stores)
-- OpenAPI MVP exporter with security scheme support, `strictSchemas` mode, and optional `openapi.json` endpoint (admin-only by default)
-- WooCommerce integration: Orders, Products, Customers, Coupons with full CRUD, query parsing, HPOS guard, capability-checked writes, protected meta keys, configurable `deleteMode`, and pre-built OpenAPI component schemas
+## better-data
 
-## Who this is for
+PHP 8.3+ DTO and Presenter library for WordPress. Typed, immutable DTOs hydrated from posts / users / terms / options / `$wpdb` rows / REST requests; symmetric write sinks; contextual output shaping (REST / admin / email / CSV); attribute-driven validation; and security primitives (`Secret`, `#[Sensitive]`, AES-256-GCM `#[Encrypted]`).
 
-- WordPress teams building headless APIs
-- Plugin/app teams that want contract-first endpoints
-- Integrations where schema, error shape, and policy behavior must stay predictable
-- WooCommerce stores that need a typed, middleware-aware REST layer over core WC data
+- Latest release: **v1.0.0**
+- Source: [github.com/Lonsdale201/better-data](https://github.com/Lonsdale201/better-data)
+- Start here: [better-data Documentation](better-data/intro)
 
-## What this is not
+## Use them together
 
-- Not a UI plugin with admin pages
-- Not a no-code endpoint builder
-- Not a WooCommerce replacement — it exposes WC data through a stricter contract
+`better-data`'s `BetterRouteBridge` wires DTOs into a `better-route` `Router`. The DTO drives hydration, validation, REST args, OpenAPI schemas, and response shaping; the router handles routing, middleware, permissions, and OpenAPI export. Either library works alone; the bridge is opt-in.
 
-## Documentation map
+- See: [Composition](composition/overview)
 
-Start with:
+## Picking a starting point
 
-1. `Getting Started` for install + first route/resource
-2. `Core` for router, middleware lifecycle, error contract
-3. `Resources` for CPT/table DSL and query safety
-4. `Auth` for JWT, application passwords, cookie/nonce, bearer token
-5. `WooCommerce` for orders, products, customers, coupons integration
-6. `OpenAPI` for schema export, security schemes, and endpoint publishing
-7. `Reference` for API tables and middleware catalog
-8. `AI Agent Skills` for structured skills an AI agent can use to work with the library
-9. `Release Notes` for what changed in each version
+| You want to... | Go to |
+|---|---|
+| Expose a REST API with strict contracts | [better-route](better-route/intro) |
+| Define typed data with WP-aware hydration | [better-data](better-data/intro) |
+| Do both — DTOs driving REST endpoints | [Composition](composition/overview) |
+| See AI agent skills | [better-route AI skills](better-route/agents) · [better-data AI skills](better-data/agents) |

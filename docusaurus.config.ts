@@ -66,14 +66,40 @@ const config: Config = {
       items: [
         {
           type: 'docSidebar',
-          sidebarId: 'tutorialSidebar',
+          sidebarId: 'betterRouteSidebar',
           position: 'left',
-          label: 'Documentation',
+          label: 'better-route',
         },
         {
-          href: 'https://github.com/Lonsdale201/better-route',
+          type: 'docSidebar',
+          sidebarId: 'betterDataSidebar',
+          position: 'left',
+          label: 'better-data',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'compositionSidebar',
+          position: 'left',
+          label: 'Composition',
+        },
+        {
+          type: 'dropdown',
           label: 'GitHub',
           position: 'right',
+          items: [
+            {
+              label: 'better-route',
+              href: 'https://github.com/Lonsdale201/better-route',
+            },
+            {
+              label: 'better-data',
+              href: 'https://github.com/Lonsdale201/better-data',
+            },
+            {
+              label: 'better-docs (this site)',
+              href: 'https://github.com/Lonsdale201/better-docs',
+            },
+          ],
         },
       ],
     },
@@ -81,21 +107,24 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'better-route',
           items: [
-            {
-              label: 'Introduction',
-              to: '/docs/intro',
-            },
+            {label: 'Documentation', to: '/docs/better-route/intro'},
+            {label: 'GitHub', href: 'https://github.com/Lonsdale201/better-route'},
+          ],
+        },
+        {
+          title: 'better-data',
+          items: [
+            {label: 'Documentation', to: '/docs/better-data/intro'},
+            {label: 'GitHub', href: 'https://github.com/Lonsdale201/better-data'},
           ],
         },
         {
           title: 'More',
           items: [
-            {
-              label: 'GitHub',
-              href: 'https://github.com/Lonsdale201/better-route',
-            },
+            {label: 'Composition', to: '/docs/composition/overview'},
+            {label: 'better-docs repo', href: 'https://github.com/Lonsdale201/better-docs'},
           ],
         },
       ],
