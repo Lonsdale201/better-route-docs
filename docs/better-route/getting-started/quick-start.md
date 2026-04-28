@@ -53,15 +53,15 @@ OpenApiRouteRegistrar::register(
     ],
     options: [
         'title' => 'better-route API',
-        'version' => 'v0.3.0',
+        'version' => 'v0.4.0',
         'serverUrl' => '/wp-json',
-        // Override the v0.3.0 default `manage_options` requirement to expose the doc:
+        // Override the admin-only default (introduced in v0.3.0) to expose the doc:
         // 'permissionCallback' => static fn (): bool => true,
     ]
 );
 ```
 
-By default in v0.3.0 the `openapi.json` endpoint is admin-only (`manage_options`). Pass `permissionCallback` if you need a different policy.
+The `openapi.json` endpoint is admin-only (`manage_options`) by default since v0.3.0. Pass `permissionCallback` if you need a different policy.
 
 ## Common mistakes
 

@@ -7,8 +7,8 @@ sidebar_position: 1
 
 ## Status
 
-- Baseline documentation target: `v0.3.0`
-- Latest release: [`v0.3.0`](release-notes/v0.3.0)
+- Baseline documentation target: `v0.4.0`
+- Latest release: [`v0.4.0`](release-notes/v0.4.0)
 - Packagist/package index release: not published yet — install via VCS repository
 
 ## What you get

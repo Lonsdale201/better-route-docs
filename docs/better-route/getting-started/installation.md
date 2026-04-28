@@ -14,7 +14,7 @@ Use VCS repository setup from the public GitHub repository:
 ```json
 {
   "require": {
-    "better-route/better-route": "^0.3.0"
+    "better-route/better-route": "^0.4.0"
   },
   "repositories": [
     {

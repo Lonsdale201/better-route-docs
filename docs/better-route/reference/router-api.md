@@ -56,6 +56,10 @@ Registers all routes through dispatcher (`WordPressRestDispatcher` by default).
 - `meta(array $meta)`
 - `args(array $args)`
 - `permission(callable $permissionCallback)`
+- `protectedByMiddleware(string|array|null $security = null)` *(v0.4.0)* — sets a permission callback that defers authorization to the better-route middleware pipeline (e.g. `JwtAuthMiddleware`). Optional argument is propagated to OpenAPI as the operation-level `security` (string scheme name or `[['scheme' => [...scopes]]]` array).
+- `publicRoute()` *(v0.4.0)* — marks the route as intentionally public and clears OpenAPI `security` for the operation (overrides any `globalSecurity`).
+
+Since v0.4.0, raw `Router` write methods (`POST`/`PUT`/`PATCH`/`DELETE`) without an explicit permission callback deny by default. Pick `permission()`, `protectedByMiddleware()`, or `publicRoute()` to make intent explicit. `GET` stays public by default.
 
 Example:
 
@@ -64,4 +68,10 @@ $router->get('/items/(?P<id>\d+)', $handler)
     ->args(['id' => ['required' => true, 'type' => 'integer']])
     ->meta(['operationId' => 'itemsGet'])
     ->permission(static fn (): bool => current_user_can('read'));
+
+$router->post('/secure/articles', $handler)
+    ->protectedByMiddleware('bearerAuth');
+
+$router->post('/webhooks/intake', $handler)
+    ->publicRoute();
 ```

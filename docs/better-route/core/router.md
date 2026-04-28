@@ -55,10 +55,31 @@ add_action('rest_api_init', function (): void {
 - `fn (RequestContext $ctx, $request): mixed`
 - `[ControllerClass::class, 'method']` (instantiated internally)
 
+## Route intent (v0.4.0)
+
+`GET` routes registered without an explicit `permission()` callback are public by default. Write methods (`POST`, `PUT`, `PATCH`, `DELETE`) are **deny-by-default** at the WordPress permission layer — they fail with `403` until you make intent explicit:
+
+- `->permission(callable)` — supply a WP permission callback (e.g. capability checks).
+- `->protectedByMiddleware(string|array|null $security = null)` — let the request reach the better-route middleware pipeline so an auth middleware (`JwtAuthMiddleware`, `BearerTokenAuthMiddleware`, etc.) can authenticate or short-circuit. Optional argument sets the OpenAPI `security` for the operation.
+- `->publicRoute()` — mark the route as intentionally public; also clears the operation-level OpenAPI `security` so it overrides any global scheme.
+
+```php
+$r->post('/articles', $handler)
+    ->permission(static fn () => current_user_can('edit_posts'));
+
+$r->post('/secure/articles', $handler)
+    ->protectedByMiddleware('bearerAuth');
+
+$r->post('/webhooks/intake', $handler)
+    ->publicRoute();
+```
+
+Resource-backed endpoints already enforce their own `ResourcePolicy` and are unaffected.
+
 ## Common mistakes
 
 - Class-string middleware requiring constructor args without `middlewareFactory`
-- Missing explicit `permission()` where auth policy is needed
+- Missing explicit route intent on a write method (returns `403` since v0.4.0)
 - Registering outside `rest_api_init` without custom dispatcher
 
 ## Validation checklist
@@ -66,6 +87,13 @@ add_action('rest_api_init', function (): void {
 - middleware order is `global -> group -> route`
 - generated route URIs are normalized (`/x` not `//x/`)
 - `contracts(true)` excludes `openapi.include=false`
+- every write route declares intent via `permission()`, `protectedByMiddleware()`, or `publicRoute()`
+
+## v0.4.0 behavior changes
+
+- Write methods (`POST`/`PUT`/`PATCH`/`DELETE`) registered on the raw `Router` without an explicit permission callback now deny by default. `GET` stays public by default.
+- New `RouteBuilder::publicRoute()` and `RouteBuilder::protectedByMiddleware()` helpers make route intent explicit at the call site.
+- Per-operation `security: []` now overrides `globalSecurity` in the OpenAPI exporter (see [OpenAPI Overview](../openapi/overview)).
 
 ## v0.3.0 behavior changes
 

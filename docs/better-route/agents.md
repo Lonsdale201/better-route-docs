@@ -5,7 +5,7 @@ sidebar_position: 99
 
 This page defines structured skills an AI agent needs to work effectively with the `better-route` library. Each skill describes a specific capability, when to use it, and the exact steps or API surface involved.
 
-Aligned with the **v0.3.0** release. See [Release Notes — v0.3.0](release-notes/v0.3.0) for the full changelog.
+Aligned with the **v0.4.0** release. See [Release Notes — v0.4.0](release-notes/v0.4.0) for the full changelog.
 
 ## Skill: Install better-route
 
@@ -25,7 +25,7 @@ Aligned with the **v0.3.0** release. See [Release Notes — v0.3.0](release-note
 ```json
 {
   "require": {
-    "better-route/better-route": "^0.3.0"
+    "better-route/better-route": "^0.4.0"
   },
   "repositories": [
     {
@@ -49,27 +49,39 @@ composer show better-route/better-route
 
 ---
 
-## Skill: Migrate a project to v0.3.0
+## Skill: Migrate a project to v0.4.0
 
-**When:** The user is upgrading from v0.2.0 (or earlier) to v0.3.0.
+**When:** The user is upgrading to v0.4.0.
 
 **Steps:**
-1. Bump the constraint to `^0.3.0` and run `composer update better-route/better-route`.
-2. Audit the project against the v0.3.0 breaking change checklist:
+1. Bump the constraint to `^0.4.0` and run `composer update better-route/better-route`.
+2. Audit raw `Router` write routes (POST/PUT/PATCH/DELETE). Any without an explicit permission callback now return `403`. Add intent at the call site:
+   - `->permission(callable)` — use when WP capability checks are the right gate.
+   - `->protectedByMiddleware(string|array|null $security = null)` — use when an auth middleware (`JwtAuthMiddleware`, `BearerTokenAuthMiddleware`, etc.) handles authentication.
+   - `->publicRoute()` — use when the route is intentionally public (webhooks, health endpoints).
+3. If upgrading from a version older than v0.3.0, also walk through the v0.3.0 checklist below.
+
+**v0.4.0 breaking-change checklist:**
 
 | Area | Action required |
 |---|---|
-| **OpenAPI doc endpoint** | Now defaults to `manage_options`. If the doc must stay public, pass `'permissionCallback' => static fn (): bool => true`. |
-| **Custom table resources** | Now deny-by-default. Add `->policy(ResourcePolicy::publicReadPrivateWrite())` (or another preset) to keep them reachable. |
-| **JWT** | `exp` claim is now required by default. Either ensure tokens carry `exp`, or pass `requireExpiration: false` to `Hs256JwtVerifier`. |
+| **Raw Router write routes** | `POST`/`PUT`/`PATCH`/`DELETE` without an explicit permission callback now deny by default. Add `->permission()`, `->protectedByMiddleware()`, or `->publicRoute()`. `GET` is unchanged. |
+
+**v0.3.0 breaking-change checklist (still applies for older upgrades):**
+
+| Area | Action required |
+|---|---|
+| **OpenAPI doc endpoint** | Defaults to `manage_options`. If the doc must stay public, pass `'permissionCallback' => static fn (): bool => true`. |
+| **Custom table resources** | Deny-by-default. Add `->policy(ResourcePolicy::publicReadPrivateWrite())` (or another preset) to keep them reachable. |
+| **JWT** | `exp` claim is required by default. Either ensure tokens carry `exp`, or pass `requireExpiration: false` to `Hs256JwtVerifier`. |
 | **`WpClaimsUserMapper`** | `sub` is no longer in default `idClaims`. Re-add it explicitly if your tokens rely on it. |
 | **Woo customers** | Endpoints are restricted to users with the `customer` role; create/update/delete require `create_users` / `edit_user` / `delete_user`. |
 | **Woo meta keys** | Keys starting with `_` are no longer writable or returned. Pass `$allowProtected = true` only when intentional. |
-| **Default cache/idempotency/rate-limit keys** | Now identity-aware. If you relied on the old defaults, pass an explicit `keyResolver` to preserve keys. |
+| **Default cache/idempotency/rate-limit keys** | Identity-aware. If you relied on the old defaults, pass an explicit `keyResolver` to preserve keys. |
 
 **Verification:**
-- All endpoints that should be reachable still respond `200`.
-- Auth flows still issue tokens with `exp` and roles compatible with the new restrictions.
+- All endpoints that should be reachable still respond `200` (no unintended `403`s on writes).
+- Auth flows still issue tokens with `exp` and roles compatible with the v0.3.0 restrictions.
 - OpenAPI doc visibility matches your intent.
 
 ---
@@ -119,7 +131,8 @@ add_action('rest_api_init', function () {
 1. Create a `Router` via `BetterRoute::router('vendor', 'v1')`.
 2. Use `->get()`, `->post()`, `->put()`, `->patch()`, `->delete()` to define routes.
 3. Each route accepts a path, a callback, and optional metadata array.
-4. Register inside a `rest_api_init` action hook.
+4. **For write methods (POST/PUT/PATCH/DELETE), declare intent** with `->permission()`, `->protectedByMiddleware()`, or `->publicRoute()` — they deny by default since v0.4.0.
+5. Register inside a `rest_api_init` action hook.
 
 **Example:**
 ```php
@@ -130,9 +143,23 @@ add_action('rest_api_init', function () {
         return \BetterRoute\Http\Response::ok(['pong' => true]);
     });
 
+    $router->post('/articles', $createArticle)
+        ->permission(static fn () => current_user_can('edit_posts'));
+
+    $router->post('/secure/articles', $createArticle)
+        ->protectedByMiddleware('bearerAuth');
+
+    $router->post('/webhooks/intake', $intake)
+        ->publicRoute();
+
     $router->register();
 });
 ```
+
+**Rules (v0.4.0):**
+- Raw `Router` write methods (`POST`/`PUT`/`PATCH`/`DELETE`) without an explicit permission callback **deny by default** at the WordPress permission layer. `GET` stays public by default.
+- `->protectedByMiddleware($security = null)` defers authorization to the better-route middleware pipeline; the optional argument (string scheme name or `[['scheme' => [...scopes]]]`) is propagated as the operation-level OpenAPI `security`.
+- `->publicRoute()` marks the route as intentionally public and clears OpenAPI `security` for the operation (overrides any `globalSecurity`).
 
 **Rules (v0.3.0):**
 - Route handlers receive `id` from the URL route parameters first; query/body `id` is only consulted if the URL does not provide one.
@@ -469,7 +496,7 @@ $contracts = $router->contracts();
 
 $document = $exporter->export($contracts, [
     'title'         => 'My API',
-    'version'       => 'v0.3.0',
+    'version'       => 'v0.4.0',
     'strictSchemas' => true, // throws on missing component refs
     'components'    => \BetterRoute\BetterRoute::wooOpenApiComponents(),
     'securitySchemes' => [
@@ -507,8 +534,8 @@ OpenApiRouteRegistrar::register(
     contractsProvider: static fn (): array => $router->contracts(openApiOnly: true),
     options: [
         'title'   => 'My API',
-        'version' => 'v0.3.0',
-        // To make the doc public, override the v0.3.0 admin-only default:
+        'version' => 'v0.4.0',
+        // To make the doc public, override the admin-only default (since v0.3.0):
         'permissionCallback' => static fn (): bool => true,
     ]
 );
