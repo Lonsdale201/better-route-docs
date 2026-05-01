@@ -1,4 +1,4 @@
-﻿---
+---
 title: Auth Overview
 ---
 
@@ -7,7 +7,10 @@ Built-in auth middleware provides bridge patterns for WordPress REST routes.
 ## Available middleware
 
 - `BetterRoute\Middleware\Jwt\JwtAuthMiddleware`
+- `BetterRoute\Middleware\Jwt\Rs256JwksJwtVerifier` *(v0.6.0)* — RS256/ES256 verifier backed by JWKS; see [JWKS (RS256 / ES256)](jwks-rs256)
+- `BetterRoute\Middleware\Jwt\HttpJwksProvider` / `StaticJwksProvider` *(v0.6.0)*
 - `BetterRoute\Middleware\Auth\BearerTokenAuthMiddleware`
+- `BetterRoute\Middleware\Auth\HmacSignatureMiddleware` *(v0.6.0)* — HMAC request signatures with replay-window enforcement; see [HMAC Request Signatures](hmac-signatures)
 - `BetterRoute\Middleware\Auth\CookieNonceAuthMiddleware`
 - `BetterRoute\Middleware\Auth\ApplicationPasswordAuthMiddleware`
 - `BetterRoute\Middleware\Auth\WpClaimsUserMapper`
@@ -19,10 +22,18 @@ On success, middleware writes auth context attributes:
 
 - `auth` (provider, userId, subject, scopes)
 - optionally `claims`, `userId`, `user`, `scopes`
+- `hmac` *(v0.6.0)* — `keyId` and `algorithm` after successful HMAC signature verification
+- `singleUseToken` *(v0.6.0)* — issuer-supplied context after a single-use token is consumed
 
 ## Important policy note
 
-Even with auth middleware, route registration still requires explicit `permission_callback` (by design in dispatcher integration).
+Even with auth middleware, route registration still requires explicit `permission_callback` (by design in dispatcher integration). For middleware-authenticated routes, declare the intent with `->protectedByMiddleware(...)` (since 0.4.0). For routes guarded by HMAC or single-use tokens (no WordPress user behind them), use `->publicRoute()` and let the middleware be the gate.
+
+## v0.6.0 additions
+
+- **Asymmetric JWT.** `Rs256JwksJwtVerifier` plus `HttpJwksProvider` and `StaticJwksProvider` for OIDC-style providers. Strict `kid` matching, algorithm pinning, private-field stripping. See [JWKS (RS256 / ES256)](jwks-rs256).
+- **HMAC request signatures.** `HmacSignatureMiddleware` plus `HmacSecretProviderInterface` and `ArrayHmacSecretProvider`. Canonical input, replay window, multi-key rotation. See [HMAC Request Signatures](hmac-signatures).
+- **Single-use tokens.** `SingleUseTokenMiddleware` plus three stores. See [Single-Use Tokens](../write-safety/single-use-tokens).
 
 ## v0.5.0 additions
 

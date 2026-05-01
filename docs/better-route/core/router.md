@@ -89,6 +89,10 @@ Resource-backed endpoints already enforce their own `ResourcePolicy` and are una
 - `contracts(true)` excludes `openapi.include=false`
 - every write route declares intent via `permission()`, `protectedByMiddleware()`, or `publicRoute()`
 
+## v0.6.0 behavior changes
+
+- `Router::dispatch()` now stores normalized route metadata under `RequestContext::$attributes['routeMeta']`. This is what powers route-level normalizer selection — for example, the [OAuth error format](../public-client/oauth-error-format) opt-in works because `ResponseNormalizer` reads `routeMeta.error_format` from the context. Existing handlers ignore the new attribute; no migration needed.
+
 ## v0.5.0 behavior changes
 
 - `Router::options(string $uri, mixed $handler): RouteBuilder` registers explicit `OPTIONS` routes for CORS preflight. `OPTIONS` permissions default to public so the browser preflight reaches the better-route pipeline (where `CorsMiddleware` short-circuits with `204`).

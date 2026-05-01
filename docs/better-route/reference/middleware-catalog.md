@@ -1,11 +1,13 @@
-﻿---
+---
 title: Middleware Catalog
 ---
 
 ## Auth
 
-- `JwtAuthMiddleware`
+- `JwtAuthMiddleware` — HS256 / asymmetric JWT verification through any `JwtVerifierInterface`
+- `Rs256JwksJwtVerifier` *(v0.6.0)* — RS256 / ES256 verifier backed by JWKS; pairs with `HttpJwksProvider` / `StaticJwksProvider`
 - `BearerTokenAuthMiddleware`
+- `HmacSignatureMiddleware` *(v0.6.0)* — HMAC request signatures with replay window; pairs with `HmacSecretProviderInterface` / `ArrayHmacSecretProvider`
 - `CookieNonceAuthMiddleware`
 - `ApplicationPasswordAuthMiddleware`
 - `WpClaimsUserMapper`
@@ -20,6 +22,11 @@ title: Middleware Catalog
 - `AtomicIdempotencyStoreInterface` *(v0.5.0)* — store contract (`reserve` / `complete` / `release`)
 - `ArrayAtomicIdempotencyStore` *(v0.5.0)* — in-memory store for tests / non-production
 - `WpdbAtomicIdempotencyStore` *(v0.5.0)* — `wpdb` `INSERT IGNORE` reservation store; dedicated table, `installSchema()` once on activation
+- `SingleUseTokenMiddleware` *(v0.6.0)* — atomic one-time token consumption (OAuth codes, magic links, password resets)
+- `SingleUseTokenStoreInterface` *(v0.6.0)* — store contract (`consume` / `store` / `wasConsumed`)
+- `ArraySingleUseTokenStore` *(v0.6.0)* — in-memory store for tests
+- `WpdbSingleUseTokenStore` *(v0.6.0)* — `wpdb`-backed token store with TTL pruning; `installSchema()` once on activation
+- `WpCacheSingleUseTokenStore` *(v0.6.0)* — object-cache lock + transient-backed records
 - `OptimisticLockMiddleware`
 - `CallbackOptimisticLockVersionResolver`
 
@@ -29,9 +36,16 @@ title: Middleware Catalog
 - `BetterRoute\Middleware\Cors\CorsPolicy` — origin allowlist, methods/headers/exposed-headers, credentials, max age
 - `Router::options()` — register explicit preflight routes; `OPTIONS` permissions are public-by-default
 
+## Network *(v0.6.0)*
+
+- `BetterRoute\Middleware\Network\TrustedProxyClientIpResolver` — trusted-proxy aware client IP resolution; implements `ClientIpResolverInterface`
+- `BetterRoute\Middleware\Network\ClientIpResolverInterface` — minimal `resolve(?mixed $request = null): ?string` contract
+- `BetterRoute\Middleware\Network\IpAllowlistMiddleware` — denies requests outside an IPv4/IPv6 CIDR allowlist
+- `BetterRoute\Middleware\Network\CidrMatcher` — IPv4/IPv6 aware CIDR / single-host matcher
+
 ## Rate limiting
 
-- `RateLimitMiddleware`
+- `RateLimitMiddleware` — *(v0.6.0)* `clientIpResolver` now accepts either `Http\ClientIpResolver` or `Middleware\Network\ClientIpResolverInterface`
 - `TransientRateLimiter`
 - `WpObjectCacheRateLimiter` *(v0.3.0)* — uses the WP object cache; throws `RuntimeException` if `wp_cache_*` is unavailable
 
@@ -41,9 +55,15 @@ title: Middleware Catalog
 - `TransientCacheStore`
 - `ETagMiddleware` *(v0.3.0)* — emits `ETag` headers and replies `304 Not Modified` on `If-None-Match` matches (GET/HEAD only)
 
-## HTTP infrastructure (v0.3.0)
+## HTTP infrastructure
 
-- `BetterRoute\Http\ClientIpResolver` — resolves the real client IP behind trusted proxies. Default trusted headers: `HTTP_X_FORWARDED_FOR`, `HTTP_CF_CONNECTING_IP`, `HTTP_X_REAL_IP`. If `REMOTE_ADDR` is not in `$trustedProxies`, headers are ignored.
+- `BetterRoute\Http\ClientIpResolver` — kept stable since v0.3.0; *(v0.6.0)* now delegates internally to `TrustedProxyClientIpResolver`. Constructor and `resolve(?array $server = null)` API unchanged. New code should prefer `TrustedProxyClientIpResolver` directly.
+- `BetterRoute\Http\OAuthErrorNormalizer` *(v0.6.0)* — emits OAuth RFC 6749 style error bodies when a route opts in via `meta(['error_format' => 'oauth_rfc6749'])`. See [OAuth Error Format](../public-client/oauth-error-format).
+
+## Support utilities *(v0.6.0)*
+
+- `BetterRoute\Support\Crypto` — CSPRNG token generation, hex/base64/base64url encoding, strict base64url decoding, constant-time compare. See [Crypto Utilities](../support/crypto).
+- `BetterRoute\Support\CryptoEncoding` — enum (`Hex`, `Base64`, `Base64Url`).
 
 ## Observability
 
@@ -67,10 +87,13 @@ $router->middleware([
 
 Order recommendation:
 
-1. Metrics/Audit (outer visibility)
-2. Rate limit/auth
-3. Cache/idempotency/optimistic lock
-4. business handler
+1. CORS (preflight short-circuit before anything else)
+2. IP allowlist (drop unauthorized networks early)
+3. Metrics/Audit (outer visibility)
+4. Rate limit
+5. Auth (JWT, HMAC, cookie/nonce, application password)
+6. Ownership / single-use token / cache / idempotency / optimistic lock
+7. business handler
 
 ## Default keys (v0.3.0)
 

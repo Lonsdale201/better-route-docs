@@ -45,6 +45,18 @@ Handlers may return:
 - `InvalidArgumentException`: `400` with `invalid_request`; `details.exception` includes the class name (developer aid)
 - other throwables: `500` with `internal_error`; **message normalized to `"Unexpected error."`** and `details` is empty *(v0.3.0)* — internal exception class and message no longer leak
 
+## OAuth error format *(v0.6.0)*
+
+Routes that wrap an OAuth surface can opt out of the default envelope per route:
+
+```php
+$router->post('/oauth/token', $handler)
+    ->meta(['error_format' => 'oauth_rfc6749'])
+    ->publicRoute();
+```
+
+Errors on those routes use the RFC 6749 shape (`{ "error": ..., "error_description": ... }`) instead. Every other route on the same router keeps the default envelope. See [OAuth Error Format](../public-client/oauth-error-format).
+
 ## Common mistakes
 
 - Throwing generic runtime exceptions for known business errors

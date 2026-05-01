@@ -36,6 +36,8 @@ const sidebars: SidebarsConfig = {
       items: [
         'better-route/auth/overview',
         'better-route/auth/jwt-bearer',
+        'better-route/auth/jwks-rs256',
+        'better-route/auth/hmac-signatures',
         'better-route/auth/cookie-nonce',
         'better-route/auth/application-password',
         'better-route/auth/ownership-guard',
@@ -47,7 +49,16 @@ const sidebars: SidebarsConfig = {
       items: [
         'better-route/write-safety/idempotency',
         'better-route/write-safety/atomic-idempotency',
+        'better-route/write-safety/single-use-tokens',
         'better-route/write-safety/optimistic-locking',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Network',
+      items: [
+        'better-route/network/trusted-proxy',
+        'better-route/network/ip-allowlist',
       ],
     },
     {
@@ -56,6 +67,14 @@ const sidebars: SidebarsConfig = {
       items: [
         'better-route/public-client/overview',
         'better-route/public-client/cors',
+        'better-route/public-client/oauth-error-format',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Support',
+      items: [
+        'better-route/support/crypto',
       ],
     },
     {
@@ -110,6 +129,7 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Release Notes',
       items: [
+        'better-route/release-notes/v0.6.0',
         'better-route/release-notes/v0.5.0',
         'better-route/release-notes/v0.4.0',
         'better-route/release-notes/v0.3.0',

@@ -1,6 +1,13 @@
-﻿---
+---
 title: JWT and Bearer
 ---
+
+`better-route` ships two JWT verifiers:
+
+- [`Hs256JwtVerifier`](#jwt-with-hs256-verifier) — symmetric (shared secret), since 0.3.0.
+- [`Rs256JwksJwtVerifier`](jwks-rs256) — asymmetric (RS256/ES256) backed by JWKS, since 0.6.0.
+
+Both implement `JwtVerifierInterface` and plug into `JwtAuthMiddleware` the same way. Pick HS256 for first-party tokens you sign yourself; pick the JWKS verifier for OIDC providers that publish a key set.
 
 ## JWT with HS256 verifier
 
@@ -26,9 +33,13 @@ $jwtMiddleware = new JwtAuthMiddleware(
 );
 ```
 
+### v0.6.0 internals
+
+`Hs256JwtVerifier` was rewired to use the shared [`Crypto`](../support/crypto) helper for constant-time signature comparison and base64url decoding. Public behavior is unchanged — the same shared crypto primitives are now reusable outside the verifier.
+
 ### v0.3.0 hardening
 
-`Hs256JwtVerifier` now enforces (defaults in parentheses):
+`Hs256JwtVerifier` enforces (defaults in parentheses):
 
 - **`exp` required** by default (`requireExpiration: true`). Tokens without `exp` are rejected unless explicitly disabled.
 - **`expectedIssuer` / `expectedAudience`** for strict `iss` / `aud` validation when set. `aud` matches against either a string or a list of audiences in the token.
@@ -36,6 +47,29 @@ $jwtMiddleware = new JwtAuthMiddleware(
 - **`maxTokenLength`** (`8192` bytes) rejects oversized tokens before parsing.
 
 `WpClaimsUserMapper` defaults changed: `idClaims` is now `['user_id', 'uid', 'wp_user_id']`. Re-add `'sub'` explicitly if your tokens use it as the WP user identifier.
+
+## JWT with RS256/ES256 (JWKS) verifier
+
+For tokens issued by an OIDC provider, use [`Rs256JwksJwtVerifier`](jwks-rs256) with `HttpJwksProvider`:
+
+```php
+use BetterRoute\Middleware\Jwt\HttpJwksProvider;
+use BetterRoute\Middleware\Jwt\Rs256JwksJwtVerifier;
+
+$jwks = new HttpJwksProvider(
+    jwksUri: 'https://issuer.example.com/.well-known/jwks.json',
+    issuer: 'https://issuer.example.com'
+);
+
+$verifier = new Rs256JwksJwtVerifier(
+    jwks: $jwks,
+    expectedIssuer: 'https://issuer.example.com',
+    expectedAudience: 'better-route',
+    allowedAlgorithms: ['RS256']
+);
+```
+
+The full hardening rules (strict `kid` matching, algorithm pinning, private-field stripping) live on the dedicated [JWKS RS256 / ES256](jwks-rs256) page.
 
 ## Bearer middleware with custom verifier
 
@@ -57,11 +91,13 @@ Wildcard matching is supported both ways:
 - required `content:*` matches granted `content:read`
 - required `content:read` matches granted `content:*`
 
+`BearerTokenAuthMiddleware` and `JwtAuthMiddleware` accept both array `scope` claims and OIDC-style space-delimited strings. 0.6.0 adds regression coverage for the string-shape behavior — no contract change.
+
 ## Common mistakes
 
 - Empty JWT secret
-- Using non-HS256 token with `Hs256JwtVerifier`
-- Expecting scopes from unsupported claim shape
+- Using a non-HS256 token with `Hs256JwtVerifier` — switch to `Rs256JwksJwtVerifier` for RS256/ES256
+- Expecting scopes from an unsupported claim shape
 - *(v0.3.0)* issuing tokens without `exp` while `requireExpiration` is on
 - *(v0.3.0)* relying on `sub` for WP user mapping without re-adding it to `WpClaimsUserMapper::$idClaims`
 

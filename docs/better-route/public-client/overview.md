@@ -17,6 +17,8 @@ The pieces below are not tied to WooCommerce — they are general primitives for
 |---|---|---|
 | Browser/mobile origin contract | `CorsMiddleware`, `CorsPolicy`, `Router::options()` | [CORS / preflight](cors) |
 | Concurrent retries on side-effectful writes | `AtomicIdempotencyMiddleware` + atomic store | [Atomic idempotency](../write-safety/atomic-idempotency) |
+| One-time grants (OAuth codes, magic links) *(v0.6.0)* | `SingleUseTokenMiddleware` + store | [Single-use tokens](../write-safety/single-use-tokens) |
+| OAuth-shaped error responses *(v0.6.0)* | `OAuthErrorNormalizer` (route metadata opt-in) | [OAuth error format](oauth-error-format) |
 | Customer-only access to their own row | `OwnershipGuardMiddleware`, `OwnedResourcePolicy` | [Ownership guards](../auth/ownership-guard) |
 | Correlated audit events | `AuditEnricherMiddleware` + `AuditMiddleware` | [Audit](../observability/audit) |
 | Header preservation when handlers return arrays | `RateLimitMiddleware` (auto-wrap) | [Middleware Catalog](../reference/middleware-catalog) |

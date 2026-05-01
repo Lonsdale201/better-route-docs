@@ -5,7 +5,7 @@ sidebar_position: 99
 
 This page defines structured skills an AI agent needs to work effectively with the `better-route` library. Each skill describes a specific capability, when to use it, and the exact steps or API surface involved.
 
-Aligned with the **v0.5.0** release. See [Release Notes — v0.5.0](release-notes/v0.5.0) for the full changelog and [v0.4.0](release-notes/v0.4.0) for the previous baseline.
+Aligned with the **v0.6.0** release. See [Release Notes — v0.6.0](release-notes/v0.6.0) for the full changelog and [v0.5.0](release-notes/v0.5.0) for the previous baseline.
 
 ## Skill: Install better-route
 
@@ -15,6 +15,7 @@ Aligned with the **v0.5.0** release. See [Release Notes — v0.5.0](release-note
 - PHP `^8.1`
 - WordPress with REST API (`rest_api_init` hook)
 - Composer
+- OpenSSL extension (for `Rs256JwksJwtVerifier` — v0.6.0)
 
 **Steps:**
 1. The package is not on Packagist yet. It must be installed via VCS repository pointing to GitHub.
@@ -25,7 +26,7 @@ Aligned with the **v0.5.0** release. See [Release Notes — v0.5.0](release-note
 ```json
 {
   "require": {
-    "better-route/better-route": "^0.5.0"
+    "better-route/better-route": "^0.6.0"
   },
   "repositories": [
     {
@@ -49,29 +50,43 @@ composer show better-route/better-route
 
 ---
 
-## Skill: Migrate a project to v0.5.0
+## Skill: Migrate a project to v0.6.0
 
-**When:** The user is upgrading to v0.5.0.
+**When:** The user is upgrading to v0.6.0.
 
 **Steps:**
-1. Bump the constraint to `^0.5.0` and run `composer update better-route/better-route`.
-2. **No breaking changes from 0.4.0.** All v0.5.0 additions are opt-in.
-3. Decide whether the project benefits from the new public-client primitives:
-   - `CorsMiddleware` + `Router::options()` — when the API is called from a browser SPA / mobile app.
-   - `AtomicIdempotencyMiddleware` + `WpdbAtomicIdempotencyStore` — when a write endpoint must not run twice under concurrent retries (charges, sends, external calls).
-   - `OwnershipGuardMiddleware` / `OwnedResourcePolicy::currentUserOwns()` — when authenticated users may only see their own rows.
-   - `AuditEnricherMiddleware` — when audit events should carry auth provider/user/subject and a hashed idempotency key.
-4. Run `(new WpdbAtomicIdempotencyStore())->installSchema()` on plugin activation if you adopt atomic idempotency. The new table is **separate** from the existing `WpdbIdempotencyStore` table.
-5. If upgrading from older versions, walk through the v0.4.0 and v0.3.0 checklists below.
+1. Bump the constraint to `^0.6.0` and run `composer update better-route/better-route`.
+2. **No breaking changes from 0.5.0.** All v0.6.0 additions are opt-in.
+3. Decide whether the project benefits from the new identity/network primitives:
+   - `Rs256JwksJwtVerifier` + `HttpJwksProvider` — when the issuer publishes a JWKS endpoint (most OIDC providers).
+   - `HmacSignatureMiddleware` — when partners send signed webhooks with shared secrets.
+   - `SingleUseTokenMiddleware` + `WpdbSingleUseTokenStore` — when a route consumes OAuth codes, magic links, password resets, or similar one-time grants.
+   - `TrustedProxyClientIpResolver` + `IpAllowlistMiddleware` — when the API sits behind Cloudflare/load balancers and needs CIDR-based access control.
+   - `meta(['error_format' => 'oauth_rfc6749'])` — for routes that wrap an OAuth surface.
+   - `Crypto` helper — for any handler-level token generation, base64url encoding, or constant-time compare.
+4. Run `(new WpdbSingleUseTokenStore())->installSchema()` on plugin activation if you adopt single-use tokens. The table is **separate** from the existing idempotency tables.
+5. If upgrading from older versions, walk through the v0.5.0 / v0.4.0 / v0.3.0 checklists below.
 
-**v0.5.0 changes (additive — no breaking changes):**
+**v0.6.0 changes (additive — no breaking changes):**
 
 | Area | Notes |
 |---|---|
-| `Router::options()` | New method for explicit preflight routes. `OPTIONS` permissions default to public. Existing routes are unaffected. |
-| `AuditMiddleware` | Now merges `RequestContext::$attributes['audit']` into emitted events. If you already used that key, the value is now included in audit events. |
-| `RateLimitMiddleware` | Array handler responses are wrapped into `Response` so rate-limit headers survive. Previously array responses lost the headers. |
-| New middlewares | `AtomicIdempotencyMiddleware`, `CorsMiddleware`, `OwnershipGuardMiddleware`, `AuditEnricherMiddleware`. All opt-in. |
+| `Http\ClientIpResolver` | Now delegates internally to `TrustedProxyClientIpResolver`. Constructor and `resolve(?array $server = null)` API unchanged. |
+| `RateLimitMiddleware` | `clientIpResolver` accepts either `Http\ClientIpResolver` or `Middleware\Network\ClientIpResolverInterface`. Existing constructor calls keep working. |
+| `Hs256JwtVerifier` | Internally rewired to use `Crypto::equals()` and `Crypto::base64UrlDecode()`. Behavior unchanged. |
+| `Router::dispatch()` | Adds normalized route metadata to `RequestContext::$attributes['routeMeta']`. Existing handlers ignore unknown attributes. |
+| New verifiers | `Rs256JwksJwtVerifier`, `HttpJwksProvider`, `StaticJwksProvider`. Strict `kid`, algorithm pinning, private-field stripping. |
+| New middleware | `HmacSignatureMiddleware`, `SingleUseTokenMiddleware`, `IpAllowlistMiddleware`. All opt-in. |
+| OAuth error format | Route-level opt-in via `meta(['error_format' => 'oauth_rfc6749'])`. Default envelope unchanged for every other route. |
+
+**v0.5.0 changes (still applies for older upgrades):**
+
+| Area | Notes |
+|---|---|
+| `Router::options()` | Method for explicit preflight routes. `OPTIONS` permissions default to public. |
+| `AuditMiddleware` | Merges `RequestContext::$attributes['audit']` into emitted events. |
+| `RateLimitMiddleware` | Array handler responses are wrapped into `Response` so rate-limit headers survive. |
+| `AtomicIdempotencyMiddleware`, `CorsMiddleware`, `OwnershipGuardMiddleware`, `AuditEnricherMiddleware` | All opt-in. |
 
 **v0.4.0 migration (still applies for older upgrades):**
 
@@ -115,7 +130,7 @@ add_action('rest_api_init', function () {
         ->register('myapp/v1', [
             'basePath'    => '/shop',
             'requireHpos' => true,
-            'deleteMode'  => 'trash', // or 'force' (default)
+            'deleteMode'  => 'trash',
             'actions'     => [
                 'products' => ['list', 'get'],
                 'orders'   => ['list', 'get', 'create', 'update', 'delete'],
@@ -170,12 +185,264 @@ add_action('rest_api_init', function () {
 
 **Rules (v0.4.0):**
 - Raw `Router` write methods (`POST`/`PUT`/`PATCH`/`DELETE`) without an explicit permission callback **deny by default** at the WordPress permission layer. `GET` stays public by default.
-- `->protectedByMiddleware($security = null)` defers authorization to the better-route middleware pipeline; the optional argument (string scheme name or `[['scheme' => [...scopes]]]`) is propagated as the operation-level OpenAPI `security`.
-- `->publicRoute()` marks the route as intentionally public and clears OpenAPI `security` for the operation (overrides any `globalSecurity`).
+- `->protectedByMiddleware($security = null)` defers authorization to the better-route middleware pipeline.
+- `->publicRoute()` marks the route as intentionally public and clears OpenAPI `security` for the operation.
 
 **Rules (v0.3.0):**
 - Route handlers receive `id` from the URL route parameters first; query/body `id` is only consulted if the URL does not provide one.
 - Inbound `X-Request-ID` is accepted only if it matches `^[A-Za-z0-9._:-]{1,128}$`; otherwise a fresh id is generated.
+
+---
+
+## Skill: Verify RS256/ES256 JWTs from a JWKS provider (v0.6.0)
+
+**When:** The user authenticates against an OIDC-style provider that publishes a JWKS endpoint (Auth0, Keycloak, Cognito, Azure AD, Google Identity, etc.). The token is signed with a private key the API never sees.
+
+**Steps:**
+1. Build an `HttpJwksProvider` pointing at the issuer's JWKS endpoint.
+2. Build an `Rs256JwksJwtVerifier` with the provider plus the expected issuer/audience.
+3. Plug the verifier into `JwtAuthMiddleware` exactly like the HS256 verifier.
+
+**Example:**
+```php
+use BetterRoute\Middleware\Jwt\HttpJwksProvider;
+use BetterRoute\Middleware\Jwt\JwtAuthMiddleware;
+use BetterRoute\Middleware\Jwt\Rs256JwksJwtVerifier;
+use BetterRoute\Middleware\Auth\WpClaimsUserMapper;
+
+$jwks = new HttpJwksProvider(
+    jwksUri: 'https://issuer.example.com/.well-known/jwks.json',
+    ttlSeconds: 3600,
+    issuer: 'https://issuer.example.com'
+);
+
+$verifier = new Rs256JwksJwtVerifier(
+    jwks: $jwks,
+    expectedIssuer: 'https://issuer.example.com',
+    expectedAudience: 'better-route',
+    requireExpiration: true,
+    maxLifetimeSeconds: 3600,
+    allowedAlgorithms: ['RS256']
+);
+
+$jwt = new JwtAuthMiddleware(
+    verifier: $verifier,
+    requiredScopes: ['account:read'],
+    userMapper: new WpClaimsUserMapper()
+);
+```
+
+**Rules:**
+- `HttpJwksProvider` rejects non-`https` URIs at construction.
+- The verifier rejects `none` and any `HS*` algorithm even if accidentally configured.
+- Strict `kid` matching only — the verifier never tries unrelated keys to "find one that verifies."
+- On a `kid` miss the JWKS is refreshed once and the lookup is retried; further misses fail with `401 invalid_token`.
+- Trigger a manual cache refresh via `do_action('better_route/jwks_refresh')` (or with the issuer string for issuer-scoped invalidation).
+- Pass `StaticJwksProvider` in tests to avoid the HTTP call.
+
+**Verification:**
+- `composer test` exercises strict `kid`, ES256 keys, RS-only allowlist, and private-field stripping in `tests/SecurityPrimitivesTest.php`.
+
+---
+
+## Skill: Verify HMAC-signed webhooks (v0.6.0)
+
+**When:** A partner posts to your API with a signature header instead of a Bearer token. Stripe-style and GitHub-style webhook patterns.
+
+**Steps:**
+1. Build a secret provider (`ArrayHmacSecretProvider` for static key maps; a custom provider for Vault/Secrets Manager).
+2. Build the `HmacSignatureMiddleware` with the headers your partner uses.
+3. Attach to a `->publicRoute()` POST endpoint.
+
+**Example:**
+```php
+use BetterRoute\Middleware\Auth\ArrayHmacSecretProvider;
+use BetterRoute\Middleware\Auth\HmacSignatureMiddleware;
+
+$secrets = new ArrayHmacSecretProvider([
+    'kid-2026-q1' => $_ENV['HMAC_SECRET_Q1'],
+    'kid-2026-q2' => $_ENV['HMAC_SECRET_Q2'],
+]);
+
+$signature = new HmacSignatureMiddleware(
+    secrets: $secrets,
+    signatureHeader: 'X-Signature',
+    timestampHeader: 'X-Timestamp',
+    keyIdHeader: 'X-Key-Id',
+    replayWindowSeconds: 300,
+    algorithm: 'sha256'
+);
+
+$router->post('/webhooks/intake', $handler)
+    ->middleware([$signature])
+    ->publicRoute();
+```
+
+**Canonical input:**
+```text
+timestamp + "\n" + method + "\n" + path + "\n" + sha256(body)
+```
+
+**Rules:**
+- Defaults: headers `X-Signature` / `X-Timestamp` / `X-Key-Id`, `300` second replay window, `sha256`.
+- Accepted signature encodings: lowercase hex, uppercase hex, base64, base64url, all four prefixed with `sha256=`.
+- Comparison uses `Crypto::equals()` (constant time).
+- Unknown key id → `401 invalid_signature`. Stale timestamp → `401 stale_signature`. Bad signature → `401 invalid_signature`.
+- On success, `$ctx->attributes['hmac']` carries `keyId` and `algorithm`. The raw secret is never exposed.
+
+**Verification:**
+- `tests/SecurityPrimitivesTest.php` covers good/bad signature, timestamp replay, unknown key id.
+
+---
+
+## Skill: Consume single-use tokens (OAuth codes, magic links) (v0.6.0)
+
+**When:** A route accepts a one-time grant the user holds in plaintext (OAuth `code`, magic-link query param, password reset token). The grant must be consumable exactly once and concurrent retries must not both succeed.
+
+**Steps:**
+1. Pick a store. Use `WpdbSingleUseTokenStore` in production. Run `installSchema()` once on plugin activation.
+2. Build the middleware with a `tokenSource` callable that pulls the token off the request, and a salt (or rely on `wp_salt(...)`).
+3. Issue tokens via `$middleware->storeToken($plaintext, $context, $ttl)` and hand `$plaintext` to the user.
+4. Attach the middleware to the consumption route.
+
+**Example:**
+```php
+use BetterRoute\Middleware\Write\SingleUseTokenMiddleware;
+use BetterRoute\Middleware\Write\WpdbSingleUseTokenStore;
+use BetterRoute\Support\Crypto;
+
+register_activation_hook(__FILE__, function (): void {
+    (new WpdbSingleUseTokenStore())->installSchema();
+});
+
+$store = new WpdbSingleUseTokenStore();
+
+$middleware = new SingleUseTokenMiddleware(
+    store: $store,
+    tokenSource: static fn ($req): ?string => (string) $req->get_param('code'),
+    ttlSeconds: 600
+);
+
+// Issue
+$plaintext = Crypto::token(32);
+$middleware->storeToken($plaintext, [
+    'userId' => $userId,
+    'scope'  => 'reset_password',
+], ttlSeconds: 900);
+
+// Consume
+$router->post('/oauth/token', static function ($ctx) {
+    $codeContext = $ctx->attributes['singleUseToken'] ?? [];
+    return \BetterRoute\Http\Response::ok(['access_token' => '...']);
+})
+    ->middleware([$middleware])
+    ->meta(['error_format' => 'oauth_rfc6749'])
+    ->publicRoute();
+```
+
+**Rules:**
+- The middleware **does not generate** tokens. Use `Crypto::token()` (or another CSPRNG) and call `storeToken()`.
+- Token plaintext is HMAC-SHA256 hashed before any store access. The salt must be the same at issue and consume time. Empty salt → falls back to `wp_salt('better_route_single_use_token')`. Missing both → `RuntimeException`.
+- `WpdbSingleUseTokenStore` is atomic via `UPDATE ... WHERE used = 0` and prunes expired rows on every access.
+- `WpCacheSingleUseTokenStore` requires a persistent object cache (Redis/Memcached) — do not use it on shared hosting.
+- `ArraySingleUseTokenStore` is for tests only; it does not survive across requests.
+- Consumed context is exposed under `$ctx->attributes['singleUseToken']`.
+
+**Errors:**
+- Missing token → `400 single_use_token_required`.
+- Unknown/expired → `401 invalid_single_use_token`.
+- Reuse → `409 single_use_token_reused` (`ConflictException`).
+
+---
+
+## Skill: Resolve client IP behind proxies and deny outside an allowlist (v0.6.0)
+
+**When:** The API sits behind Cloudflare or a load balancer. Some routes (back-channel webhooks, admin endpoints) must only be reachable from a known network.
+
+**Steps:**
+1. Build a `TrustedProxyClientIpResolver` with the trusted proxy CIDRs and the forwarded headers your edge sets.
+2. Pass the resolver into `IpAllowlistMiddleware` along with the allowed CIDRs.
+3. Attach to the route. Stack with HMAC or JWT auth as needed.
+
+**Example:**
+```php
+use BetterRoute\Middleware\Network\IpAllowlistMiddleware;
+use BetterRoute\Middleware\Network\TrustedProxyClientIpResolver;
+
+$resolver = new TrustedProxyClientIpResolver(
+    trustedProxyCidrs: ['173.245.48.0/20', '103.21.244.0/22', '2400:cb00::/32'],
+    forwardedHeaders: ['CF-Connecting-IP', 'X-Forwarded-For']
+);
+
+$allowlist = new IpAllowlistMiddleware(
+    allowedCidrs: ['198.51.100.0/24', '203.0.113.42'],
+    ipResolver: $resolver,
+    failClosed: true
+);
+
+$router->post('/webhooks/partner', $handler)
+    ->middleware([$allowlist])
+    ->publicRoute();
+```
+
+**Rules:**
+- `TrustedProxyClientIpResolver` only honours forwarded headers when `REMOTE_ADDR` is inside `trustedProxyCidrs`. Otherwise headers are ignored.
+- `X-Forwarded-For` uses the first valid IP in the comma-delimited list.
+- `IpAllowlistMiddleware` with `failClosed: true` returns `403 client_ip_unavailable` when no IP can be resolved; `403 client_ip_not_allowed` when the IP is outside the CIDR list.
+- Plug the resolver into `RateLimitMiddleware` (`clientIpResolver:` constructor argument) for proxy-aware rate-limit keys.
+- The legacy `Http\ClientIpResolver` keeps working — its constructor and `resolve()` API are unchanged.
+
+---
+
+## Skill: Emit OAuth RFC 6749 error responses (v0.6.0)
+
+**When:** A route mimics an OAuth provider (`/oauth/token`, `/oauth/authorize`, `/oauth/revoke`). OAuth client libraries expect `{ error, error_description }` instead of the better-route envelope.
+
+**Steps:**
+1. Add `meta(['error_format' => 'oauth_rfc6749'])` to the route.
+2. Throw `ApiException` from the handler with the desired OAuth code (`invalid_grant`, `invalid_request`, ...). The normalizer passes the code through.
+
+**Example:**
+```php
+$router->post('/oauth/token', $handler)
+    ->meta(['error_format' => 'oauth_rfc6749'])
+    ->publicRoute();
+```
+
+**Rules:**
+- The flag is route-level. Other routes keep the default better-route envelope.
+- `internal_error` is rewritten to `server_error` for 5xx responses.
+- `request_id` is emitted only when the thrown exception's `details.requestId === true`. Off by default to match the RFC.
+- `error_uri` is emitted when `details.error_uri` (or `errorUri`) is set on the exception.
+- For non-`ApiException` 5xx, the message is normalized to `"Unexpected error."` so handler internals never leak.
+
+---
+
+## Skill: Generate tokens and compare in constant time (v0.6.0)
+
+**When:** Handler-level code needs to mint an unguessable token (CSRF, magic link, internal job id) or compare a secret-derived value safely.
+
+**Example:**
+```php
+use BetterRoute\Support\Crypto;
+use BetterRoute\Support\CryptoEncoding;
+
+$token = Crypto::token(32);                     // 43-char base64url
+$hex   = Crypto::tokenHex(32);                  // 64-char hex
+$b64   = Crypto::token(32, CryptoEncoding::Base64);
+
+if (!Crypto::equals($expected, $candidate)) {
+    throw new \BetterRoute\Http\ApiException('Invalid token.', 401, 'invalid_token');
+}
+
+$encoded = Crypto::base64UrlEncode($raw);
+$decoded = Crypto::base64UrlDecode($encoded);   // throws RuntimeException on malformed input
+```
+
+**Rules:**
+- `Crypto::token()` and `Crypto::tokenHex()` use `random_bytes` under the hood.
+- `Crypto::equals()` wraps `hash_equals` — use it for any HMAC/digest comparison.
+- `Crypto::base64UrlDecode()` is strict: alphabet-checked, length-checked, malformed input throws.
 
 ---
 
@@ -198,7 +465,7 @@ $resource = Resource::make('books')
     ->sourceCpt('book')
     ->fields(['id', 'title', 'status', 'content', 'meta'])
     ->allowedStatuses(['publish', 'draft'])
-    ->deleteMode('trash') // 'force' (default) or 'trash'
+    ->deleteMode('trash')
     ->policy(ResourcePolicy::publicReadPrivateWrite('edit_posts'))
     ->register($router);
 ```
@@ -322,17 +589,19 @@ $resource->policy(ResourcePolicy::capabilities([
 
 ---
 
-## Skill: Add authentication middleware
+## Skill: Add HS256 JWT authentication
 
-**When:** The user wants to protect endpoints with authentication.
+**When:** The user wants to protect endpoints with JWTs they sign themselves (shared secret).
 
 **Available middleware:**
-- `JwtAuthMiddleware` — validates Bearer JWT tokens (HS256)
-- `ApplicationPasswordAuthMiddleware` — validates WordPress application passwords
-- `BearerTokenAuthMiddleware` — validates custom bearer tokens via callback
-- `CookieNonceAuthMiddleware` — validates WordPress cookie + nonce (for logged-in users)
+- `JwtAuthMiddleware` — validates Bearer JWT tokens via any `JwtVerifierInterface`.
+- `BearerTokenAuthMiddleware` — validates custom bearer tokens via callback.
+- `Hs256JwtVerifier` — HS256 verifier for shared-secret tokens (since 0.3.0).
+- `Rs256JwksJwtVerifier` *(v0.6.0)* — RS256/ES256 verifier backed by JWKS. See the dedicated skill above.
+- `ApplicationPasswordAuthMiddleware` — validates WordPress application passwords.
+- `CookieNonceAuthMiddleware` — validates WordPress cookie + nonce.
 
-**Example (JWT):**
+**Example (HS256):**
 ```php
 use BetterRoute\Middleware\Jwt\JwtAuthMiddleware;
 use BetterRoute\Middleware\Jwt\Hs256JwtVerifier;
@@ -343,15 +612,15 @@ $verifier = new Hs256JwtVerifier(
     leewaySeconds: 30,
     expectedIssuer: 'https://issuer.example.com',
     expectedAudience: 'myapp',
-    requireExpiration: true,        // v0.3.0 default
+    requireExpiration: true,
     maxLifetimeSeconds: 3600,
-    maxTokenLength: 8192             // v0.3.0 default
+    maxTokenLength: 8192
 );
 
 $jwt = new JwtAuthMiddleware(
     verifier: $verifier,
     requiredScopes: ['api:read'],
-    userMapper: new WpClaimsUserMapper() // default idClaims: ['user_id', 'uid', 'wp_user_id']
+    userMapper: new WpClaimsUserMapper()
 );
 
 $router->group('/protected', function ($group) {
@@ -365,6 +634,8 @@ $router->group('/protected', function ($group) {
 - `maxLifetimeSeconds` rejects tokens whose `exp - iat` exceeds the cap.
 - `maxTokenLength` rejects oversized tokens before parsing.
 - `WpClaimsUserMapper` no longer maps `sub` by default — re-add it to `idClaims` if needed.
+
+**Note (v0.6.0):** `Hs256JwtVerifier` was rewired to use `Crypto::equals()` and `Crypto::base64UrlDecode()` internally. Public behavior is unchanged.
 
 ---
 
@@ -393,11 +664,11 @@ $router->get('/profile/{id}', $handler)
 
 ---
 
-## Skill: Resolve the client IP behind proxies
+## Skill: Resolve the client IP behind proxies (legacy + v0.6.0)
 
 **When:** The user is behind Cloudflare / a load balancer and needs the real client IP for rate limiting, logging, or audit.
 
-**Example:**
+**Legacy API (v0.3.0+):**
 ```php
 use BetterRoute\Http\ClientIpResolver;
 
@@ -406,12 +677,26 @@ $resolver = new ClientIpResolver(
     trustedHeaders: ['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR']
 );
 
-$ip = $resolver->resolve(); // null if REMOTE_ADDR unavailable
+$ip = $resolver->resolve();
+```
+
+**Hardened API (v0.6.0):**
+```php
+use BetterRoute\Middleware\Network\TrustedProxyClientIpResolver;
+
+$resolver = new TrustedProxyClientIpResolver(
+    trustedProxyCidrs: ['173.245.48.0/20', '103.21.244.0/22'],
+    forwardedHeaders: ['CF-Connecting-IP', 'X-Forwarded-For']
+);
+
+$ip = $resolver->resolve();
 ```
 
 **Rules:**
-- If `REMOTE_ADDR` is not in `$trustedProxies`, it is returned as-is (the proxy chain is ignored — never trust unauthenticated header IPs).
-- Default trusted headers: `HTTP_X_FORWARDED_FOR`, `HTTP_CF_CONNECTING_IP`, `HTTP_X_REAL_IP`.
+- New code should prefer `TrustedProxyClientIpResolver` — it understands IPv6 CIDRs natively and implements `ClientIpResolverInterface`.
+- The legacy `Http\ClientIpResolver` keeps its constructor and `resolve(?array $server = null)` API; internally it now delegates to the hardened resolver.
+- Forwarded headers are honoured **only** when `REMOTE_ADDR` is inside a trusted CIDR. Otherwise `REMOTE_ADDR` is returned and the headers are ignored.
+- `RateLimitMiddleware` accepts either resolver in its `clientIpResolver` constructor argument.
 
 ---
 
@@ -491,8 +776,8 @@ $middleware = new IdempotencyMiddleware($store, ttlSeconds: 600, requireKey: tru
 - `requireKey: true` makes missing `Idempotency-Key` headers fail with `400 idempotency_key_required`.
 
 **Choose between replay and atomic (v0.5.0):**
-- `IdempotencyMiddleware` (above) writes the cached response **after** the handler runs. Two concurrent retries can both reach the handler before either one finishes.
-- `AtomicIdempotencyMiddleware` (next skill) reserves the key **before** handler execution and returns `409 idempotency_in_progress` for concurrent retries. Use it whenever running the handler twice would charge a customer twice, send two emails, or push two webhooks.
+- `IdempotencyMiddleware` writes the cached response **after** the handler runs. Two concurrent retries can both reach the handler.
+- `AtomicIdempotencyMiddleware` reserves the key **before** handler execution and returns `409 idempotency_in_progress` for concurrent retries. Use it whenever running the handler twice would charge a customer twice, send two emails, or push two webhooks.
 
 ---
 
@@ -534,11 +819,6 @@ $router->post('/actions/charge', $handler)
 - Same K, different fingerprint: `409 idempotency_conflict`.
 - Handler throws (default `releaseOnThrowable: true`): reservation removed, client may retry.
 - Missing `Idempotency-Key` with `requireKey: true`: `400 idempotency_key_required`.
-
-**Rules:**
-- Cross-database table names containing `.` are rejected.
-- Default key is identity-aware (`{provider}:user:{userId}` → `{provider}:sub:{subject}` → `'guest'`).
-- Use `ArrayAtomicIdempotencyStore` only in tests — state does not persist between requests.
 
 ---
 
@@ -582,10 +862,10 @@ Resource::make('records')
 ```
 
 **Rules:**
-- Return `null` (not `0`) from the resolver when the resource does not exist — `0` would compare equal to `(int) get_current_user_id()` for unauthenticated users.
+- Return `null` (not `0`) from the resolver when the resource does not exist.
 - Default `deniedStatus: 404` does not leak existence. Use `403` only when the route already discloses existence by other means.
 - The Resource policy authorizes; it does not narrow the result set. For `list`, also filter rows to the current user in the data layer.
-- Identity comes from `auth.userId`, then `auth.subject`, then `get_current_user_id()` fallback. Both sides compare as strings.
+- Identity comes from `auth.userId`, then `auth.subject`, then `get_current_user_id()` fallback.
 
 ---
 
@@ -613,15 +893,10 @@ $router->middleware([
 $router->options('/account/orders/(?P<id>\d+)', static fn () => null);
 ```
 
-**Defaults the policy emits:**
-- `Access-Control-Allow-Headers`: `Authorization, Content-Type, Idempotency-Key, If-Match, If-None-Match, X-Request-ID, X-WP-Nonce`.
-- `Access-Control-Expose-Headers`: `ETag, Idempotency-Replayed, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-Request-ID`.
-- `Vary: Origin`.
-
 **Rules:**
-- `['*']` with `allowCredentials: true` echoes the request origin back instead of `*` (browsers reject `*` with credentials). Prefer an explicit allowlist.
+- `['*']` with `allowCredentials: true` echoes the request origin back instead of `*`.
 - Disallowed origins fail with `403 cors_origin_denied` unless `rejectDisallowedOrigins: false` is passed.
-- Place `CorsMiddleware` before auth — preflight requests do not carry `Authorization` and would be rejected.
+- Place `CorsMiddleware` before auth — preflight requests do not carry `Authorization`.
 
 ---
 
@@ -649,16 +924,9 @@ $router->middleware([
 ]);
 ```
 
-**Keys added to the audit event:**
-- `authProvider`, `authUserId`, `authSubject` — only fields actually present on the auth attribute.
-- `idempotencyKey` — SHA-1 hash of the `Idempotency-Key` header (never raw).
-- `clientIp` — only when `includeClientIp: true`.
-- Anything in `staticFields`.
-
 **Rules:**
-- Handlers can also write to the `audit` attribute via `$ctx->withAttribute('audit', [...])` — `AuditMiddleware` merges everything before emitting.
-- Keep `staticFields` payloads safe to ship to a log aggregator — no raw tokens or PII.
 - Order: auth → enricher → audit. Enricher before auth means `authUserId` is missing.
+- Keep `staticFields` payloads safe to ship to a log aggregator — no raw tokens or PII.
 
 ---
 
@@ -678,8 +946,8 @@ $contracts = $router->contracts();
 
 $document = $exporter->export($contracts, [
     'title'         => 'My API',
-    'version'       => 'v0.5.0',
-    'strictSchemas' => true, // throws on missing component refs
+    'version'       => 'v0.6.0',
+    'strictSchemas' => true,
     'components'    => \BetterRoute\BetterRoute::wooOpenApiComponents(),
     'securitySchemes' => [
         'bearerAuth' => [
@@ -698,7 +966,7 @@ echo json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 ```
 
 **Rules:**
-- `strictSchemas: true` throws `InvalidArgumentException` if a `$ref` points to an unknown component, instead of substituting `{ type: 'object', additionalProperties: true }`.
+- `strictSchemas: true` throws `InvalidArgumentException` if a `$ref` points to an unknown component.
 - `strictSchemas: false` (default) preserves the v0.2.0 forgiving behavior.
 
 ---
@@ -716,7 +984,7 @@ OpenApiRouteRegistrar::register(
     contractsProvider: static fn (): array => $router->contracts(openApiOnly: true),
     options: [
         'title'   => 'My API',
-        'version' => 'v0.5.0',
+        'version' => 'v0.6.0',
         // To make the doc public, override the admin-only default (since v0.3.0):
         'permissionCallback' => static fn (): bool => true,
     ]
@@ -724,7 +992,7 @@ OpenApiRouteRegistrar::register(
 ```
 
 **Rules (v0.3.0):**
-- Default permission is `current_user_can('manage_options')`. Override with `permissionCallback` if you need a different policy.
+- Default permission is `current_user_can('manage_options')`.
 - The endpoint path is `/openapi.json` under the namespace.
 
 ---
@@ -779,7 +1047,7 @@ GET /wp-json/vendor/v1/woo/coupons?code=SUMMER25&fields=id,code,amount,discount_
 
 **When:** The agent needs to interpret or handle API errors.
 
-**Every error response follows this envelope:**
+**Default envelope:**
 ```json
 {
   "error": {
@@ -791,12 +1059,22 @@ GET /wp-json/vendor/v1/woo/coupons?code=SUMMER25&fields=id,code,amount,discount_
 }
 ```
 
+**OAuth RFC 6749 envelope (v0.6.0, route opt-in):**
+```json
+{
+  "error": "invalid_request",
+  "error_description": "Invalid request."
+}
+```
+
+Routes opt in via `meta(['error_format' => 'oauth_rfc6749'])`. `internal_error` is rewritten to `server_error` for 5xx responses on those routes.
+
 **Common error codes:**
-- `400` — validation error, unknown parameters, missing required fields, `validation_failed`, `idempotency_key_required`
-- `401` — `invalid_token`, authentication required
-- `403` — insufficient permissions, `forbidden`, `cors_origin_denied` *(v0.5.0)*
+- `400` — `validation_failed`, `invalid_request`, `idempotency_key_required`, `single_use_token_required` *(v0.6.0)*
+- `401` — `invalid_token`, `unauthorized`, `invalid_signature` *(v0.6.0)*, `signature_required` *(v0.6.0)*, `stale_signature` *(v0.6.0)*, `invalid_signature_timestamp` *(v0.6.0)*, `invalid_single_use_token` *(v0.6.0)*
+- `403` — `forbidden`, `cors_origin_denied` *(v0.5.0)*, `client_ip_unavailable` *(v0.6.0)*, `client_ip_not_allowed` *(v0.6.0)*
 - `404` — resource not found
-- `409` — `idempotency_conflict`, `idempotency_in_progress` *(v0.5.0)*, `hpos_required`, duplicate email
+- `409` — `idempotency_conflict`, `idempotency_in_progress` *(v0.5.0)*, `single_use_token_reused` *(v0.6.0)*, `hpos_required`, duplicate email
 - `412` — `precondition_failed`, `optimistic_lock_failed`
 - `429` — `rate_limited`
 - `503` — `woo_unavailable`
