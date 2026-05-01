@@ -2,7 +2,11 @@
 title: Idempotency
 ---
 
-`IdempotencyMiddleware` protects write endpoints from duplicate processing.
+`IdempotencyMiddleware` protects write endpoints from duplicate processing by **replaying the saved response** when the same key is seen again.
+
+:::tip Need to block concurrent execution?
+`IdempotencyMiddleware` writes the cached response **after** the handler runs — two concurrent retries can both reach the handler. For side-effectful operations (charges, external calls, notifications), use [`AtomicIdempotencyMiddleware`](atomic-idempotency) instead, which reserves the key before the handler executes.
+:::
 
 ## Minimal example
 

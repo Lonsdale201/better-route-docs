@@ -9,14 +9,25 @@ title: Middleware Catalog
 - `CookieNonceAuthMiddleware`
 - `ApplicationPasswordAuthMiddleware`
 - `WpClaimsUserMapper`
+- `OwnershipGuardMiddleware` *(v0.5.0)* — route-level "current user owns this resource" guard; pairs with `OwnedResourcePolicy::currentUserOwns()` for Resource DSL
 
 ## Write safety
 
-- `IdempotencyMiddleware`
+- `IdempotencyMiddleware` — response-replay cache (handler runs, then store writes)
 - `TransientIdempotencyStore`
-- `WpdbIdempotencyStore` *(v0.3.0)* — `wpdb`-backed store; call `installSchema()` once on activation
+- `WpdbIdempotencyStore` *(v0.3.0)* — `wpdb`-backed replay store; call `installSchema()` once on activation
+- `AtomicIdempotencyMiddleware` *(v0.5.0)* — reserves the key **before** handler execution; blocks concurrent retries with `409 idempotency_in_progress`
+- `AtomicIdempotencyStoreInterface` *(v0.5.0)* — store contract (`reserve` / `complete` / `release`)
+- `ArrayAtomicIdempotencyStore` *(v0.5.0)* — in-memory store for tests / non-production
+- `WpdbAtomicIdempotencyStore` *(v0.5.0)* — `wpdb` `INSERT IGNORE` reservation store; dedicated table, `installSchema()` once on activation
 - `OptimisticLockMiddleware`
 - `CallbackOptimisticLockVersionResolver`
+
+## Public-client / CORS *(v0.5.0)*
+
+- `BetterRoute\Middleware\Cors\CorsMiddleware` — applies a `CorsPolicy`, short-circuits preflight `OPTIONS` with `204`
+- `BetterRoute\Middleware\Cors\CorsPolicy` — origin allowlist, methods/headers/exposed-headers, credentials, max age
+- `Router::options()` — register explicit preflight routes; `OPTIONS` permissions are public-by-default
 
 ## Rate limiting
 
@@ -36,7 +47,8 @@ title: Middleware Catalog
 
 ## Observability
 
-- `AuditMiddleware`
+- `AuditMiddleware` — *(v0.5.0)* now merges `RequestContext::$attributes['audit']` into emitted events
+- `AuditEnricherMiddleware` *(v0.5.0)* — adds auth provider/user/subject, hashed idempotency key, optional client IP, and static fields to the `audit` attribute
 - `ErrorLogAuditLogger`
 - `MetricsMiddleware`
 - `InMemoryMetricSink`

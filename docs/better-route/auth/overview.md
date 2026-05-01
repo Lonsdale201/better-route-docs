@@ -11,6 +11,7 @@ Built-in auth middleware provides bridge patterns for WordPress REST routes.
 - `BetterRoute\Middleware\Auth\CookieNonceAuthMiddleware`
 - `BetterRoute\Middleware\Auth\ApplicationPasswordAuthMiddleware`
 - `BetterRoute\Middleware\Auth\WpClaimsUserMapper`
+- `BetterRoute\Middleware\Auth\OwnershipGuardMiddleware` *(v0.5.0)* — see [Ownership guards](ownership-guard)
 
 ## Context propagation
 
@@ -22,6 +23,11 @@ On success, middleware writes auth context attributes:
 ## Important policy note
 
 Even with auth middleware, route registration still requires explicit `permission_callback` (by design in dispatcher integration).
+
+## v0.5.0 additions
+
+- `OwnershipGuardMiddleware` for routes where the authenticated user may only access their own object. Default `deniedStatus` is `404` to avoid leaking existence.
+- `Resource\OwnedResourcePolicy::currentUserOwns()` — Resource DSL preset that wires the URL `id`, the auth identity, and an optional `bypassCapability` together. See [Ownership guards](ownership-guard).
 
 ## v0.3.0 hardening
 

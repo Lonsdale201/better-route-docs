@@ -31,6 +31,7 @@ Nests routes and middlewares under prefix.
 - `put($uri, $handler)`
 - `patch($uri, $handler)`
 - `delete($uri, $handler)`
+- `options($uri, $handler)` *(v0.5.0)* — explicit preflight routes; permissions default to public so the browser preflight reaches the better-route pipeline.
 
 Returns `RouteBuilder` for chain methods.
 

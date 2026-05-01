@@ -5,7 +5,7 @@ sidebar_position: 99
 
 This page defines structured skills an AI agent needs to work effectively with the `better-route` library. Each skill describes a specific capability, when to use it, and the exact steps or API surface involved.
 
-Aligned with the **v0.4.0** release. See [Release Notes — v0.4.0](release-notes/v0.4.0) for the full changelog.
+Aligned with the **v0.5.0** release. See [Release Notes — v0.5.0](release-notes/v0.5.0) for the full changelog and [v0.4.0](release-notes/v0.4.0) for the previous baseline.
 
 ## Skill: Install better-route
 
@@ -25,7 +25,7 @@ Aligned with the **v0.4.0** release. See [Release Notes — v0.4.0](release-note
 ```json
 {
   "require": {
-    "better-route/better-route": "^0.4.0"
+    "better-route/better-route": "^0.5.0"
   },
   "repositories": [
     {
@@ -49,19 +49,31 @@ composer show better-route/better-route
 
 ---
 
-## Skill: Migrate a project to v0.4.0
+## Skill: Migrate a project to v0.5.0
 
-**When:** The user is upgrading to v0.4.0.
+**When:** The user is upgrading to v0.5.0.
 
 **Steps:**
-1. Bump the constraint to `^0.4.0` and run `composer update better-route/better-route`.
-2. Audit raw `Router` write routes (POST/PUT/PATCH/DELETE). Any without an explicit permission callback now return `403`. Add intent at the call site:
-   - `->permission(callable)` — use when WP capability checks are the right gate.
-   - `->protectedByMiddleware(string|array|null $security = null)` — use when an auth middleware (`JwtAuthMiddleware`, `BearerTokenAuthMiddleware`, etc.) handles authentication.
-   - `->publicRoute()` — use when the route is intentionally public (webhooks, health endpoints).
-3. If upgrading from a version older than v0.3.0, also walk through the v0.3.0 checklist below.
+1. Bump the constraint to `^0.5.0` and run `composer update better-route/better-route`.
+2. **No breaking changes from 0.4.0.** All v0.5.0 additions are opt-in.
+3. Decide whether the project benefits from the new public-client primitives:
+   - `CorsMiddleware` + `Router::options()` — when the API is called from a browser SPA / mobile app.
+   - `AtomicIdempotencyMiddleware` + `WpdbAtomicIdempotencyStore` — when a write endpoint must not run twice under concurrent retries (charges, sends, external calls).
+   - `OwnershipGuardMiddleware` / `OwnedResourcePolicy::currentUserOwns()` — when authenticated users may only see their own rows.
+   - `AuditEnricherMiddleware` — when audit events should carry auth provider/user/subject and a hashed idempotency key.
+4. Run `(new WpdbAtomicIdempotencyStore())->installSchema()` on plugin activation if you adopt atomic idempotency. The new table is **separate** from the existing `WpdbIdempotencyStore` table.
+5. If upgrading from older versions, walk through the v0.4.0 and v0.3.0 checklists below.
 
-**v0.4.0 breaking-change checklist:**
+**v0.5.0 changes (additive — no breaking changes):**
+
+| Area | Notes |
+|---|---|
+| `Router::options()` | New method for explicit preflight routes. `OPTIONS` permissions default to public. Existing routes are unaffected. |
+| `AuditMiddleware` | Now merges `RequestContext::$attributes['audit']` into emitted events. If you already used that key, the value is now included in audit events. |
+| `RateLimitMiddleware` | Array handler responses are wrapped into `Response` so rate-limit headers survive. Previously array responses lost the headers. |
+| New middlewares | `AtomicIdempotencyMiddleware`, `CorsMiddleware`, `OwnershipGuardMiddleware`, `AuditEnricherMiddleware`. All opt-in. |
+
+**v0.4.0 migration (still applies for older upgrades):**
 
 | Area | Action required |
 |---|---|
@@ -478,6 +490,176 @@ $middleware = new IdempotencyMiddleware($store, ttlSeconds: 600, requireKey: tru
 - Use `WpdbIdempotencyStore` instead of the default array store for cross-request persistence.
 - `requireKey: true` makes missing `Idempotency-Key` headers fail with `400 idempotency_key_required`.
 
+**Choose between replay and atomic (v0.5.0):**
+- `IdempotencyMiddleware` (above) writes the cached response **after** the handler runs. Two concurrent retries can both reach the handler before either one finishes.
+- `AtomicIdempotencyMiddleware` (next skill) reserves the key **before** handler execution and returns `409 idempotency_in_progress` for concurrent retries. Use it whenever running the handler twice would charge a customer twice, send two emails, or push two webhooks.
+
+---
+
+## Skill: Configure atomic idempotency for side-effectful writes (v0.5.0)
+
+**When:** The user has a write endpoint where concurrent duplicate execution would cause real-world harm (payments, notifications, external API calls, customer-visible mutations).
+
+**Steps:**
+1. Run `(new WpdbAtomicIdempotencyStore())->installSchema()` once on plugin activation. The table is separate from the existing `WpdbIdempotencyStore` table.
+2. Attach `AtomicIdempotencyMiddleware` to the route or group.
+3. Place it inside the auth boundary (after auth middleware, before the handler).
+
+**Example:**
+```php
+use BetterRoute\Middleware\Write\AtomicIdempotencyMiddleware;
+use BetterRoute\Middleware\Write\WpdbAtomicIdempotencyStore;
+
+register_activation_hook(__FILE__, function (): void {
+    (new WpdbAtomicIdempotencyStore())->installSchema();
+});
+
+$store = new WpdbAtomicIdempotencyStore();
+
+$router->post('/actions/charge', $handler)
+    ->middleware([
+        new AtomicIdempotencyMiddleware(
+            store: $store,
+            ttlSeconds: 900,
+            requireKey: true
+        ),
+    ])
+    ->protectedByMiddleware('bearerAuth');
+```
+
+**Behavior:**
+- First request with key K, fingerprint F: reserves `(K, F)`, runs handler, stores response.
+- Concurrent identical request: `409 idempotency_in_progress`.
+- Later identical request after completion: replays response with `Idempotency-Replayed: true`.
+- Same K, different fingerprint: `409 idempotency_conflict`.
+- Handler throws (default `releaseOnThrowable: true`): reservation removed, client may retry.
+- Missing `Idempotency-Key` with `requireKey: true`: `400 idempotency_key_required`.
+
+**Rules:**
+- Cross-database table names containing `.` are rejected.
+- Default key is identity-aware (`{provider}:user:{userId}` → `{provider}:sub:{subject}` → `'guest'`).
+- Use `ArrayAtomicIdempotencyStore` only in tests — state does not persist between requests.
+
+---
+
+## Skill: Apply ownership guards (v0.5.0)
+
+**When:** The user has authenticated routes where each user may only access their own row (account orders, profiles, customer records). Capability checks alone are too coarse.
+
+**Two surfaces:**
+- **Raw Router routes:** `OwnershipGuardMiddleware`. The resolver receives the full `RequestContext`.
+- **Resource DSL:** `OwnedResourcePolicy::currentUserOwns()`. The resolver receives the resolved integer `id` from the URL.
+
+**Route-level example:**
+```php
+use BetterRoute\Middleware\Auth\OwnershipGuardMiddleware;
+
+$router->get('/account/orders/(?P<id>\d+)', $handler)
+    ->middleware([
+        new OwnershipGuardMiddleware(
+            ownerResolver: static fn ($ctx): ?int => resolve_order_owner_id($ctx->request),
+            bypassCapability: 'manage_woocommerce',
+            deniedStatus: 404
+        ),
+    ])
+    ->protectedByMiddleware('bearerAuth');
+```
+
+**Resource example:**
+```php
+use BetterRoute\Resource\OwnedResourcePolicy;
+
+Resource::make('records')
+    ->restNamespace('myapp/v1')
+    ->sourceTable('app_records', 'id')
+    ->policy(OwnedResourcePolicy::currentUserOwns(
+        ownerResolver: static fn (int $id): ?int => resolve_record_owner_id($id),
+        ownedActions: ['get', 'update', 'delete'],
+        bypassCapability: 'manage_options',
+        allowListForAuthenticatedUsers: true
+    ))
+    ->register();
+```
+
+**Rules:**
+- Return `null` (not `0`) from the resolver when the resource does not exist — `0` would compare equal to `(int) get_current_user_id()` for unauthenticated users.
+- Default `deniedStatus: 404` does not leak existence. Use `403` only when the route already discloses existence by other means.
+- The Resource policy authorizes; it does not narrow the result set. For `list`, also filter rows to the current user in the data layer.
+- Identity comes from `auth.userId`, then `auth.subject`, then `get_current_user_id()` fallback. Both sides compare as strings.
+
+---
+
+## Skill: Configure CORS for browser/mobile clients (v0.5.0)
+
+**When:** The API is called from a browser SPA, mobile webview, or a partner front-end on a different origin.
+
+**Steps:**
+1. Build a `CorsPolicy` with the allowed origins, credentials flag, and any custom header lists.
+2. Add `CorsMiddleware` as the **first** middleware in the pipeline so preflight `OPTIONS` requests short-circuit before auth.
+3. Register explicit `OPTIONS` routes for paths that the browser will preflight using `Router::options()`.
+
+**Example:**
+```php
+use BetterRoute\Middleware\Cors\CorsMiddleware;
+use BetterRoute\Middleware\Cors\CorsPolicy;
+
+$router->middleware([
+    new CorsMiddleware(new CorsPolicy(
+        allowedOrigins: ['https://app.example.com'],
+        allowCredentials: true
+    )),
+]);
+
+$router->options('/account/orders/(?P<id>\d+)', static fn () => null);
+```
+
+**Defaults the policy emits:**
+- `Access-Control-Allow-Headers`: `Authorization, Content-Type, Idempotency-Key, If-Match, If-None-Match, X-Request-ID, X-WP-Nonce`.
+- `Access-Control-Expose-Headers`: `ETag, Idempotency-Replayed, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-Request-ID`.
+- `Vary: Origin`.
+
+**Rules:**
+- `['*']` with `allowCredentials: true` echoes the request origin back instead of `*` (browsers reject `*` with credentials). Prefer an explicit allowlist.
+- Disallowed origins fail with `403 cors_origin_denied` unless `rejectDisallowedOrigins: false` is passed.
+- Place `CorsMiddleware` before auth — preflight requests do not carry `Authorization` and would be rejected.
+
+---
+
+## Skill: Enrich audit events (v0.5.0)
+
+**When:** The user wants audit events to carry auth provider/user/subject, hashed idempotency keys, and optional client IP without modifying handlers.
+
+**Steps:**
+1. Add `AuditEnricherMiddleware` **after** auth middleware (so `auth` attribute is populated) and **before** `AuditMiddleware`.
+2. Pass static fields (e.g. `['resource' => 'account']`) for fixed metadata.
+3. Set `includeClientIp: true` only when you have a configured `ClientIpResolver` (trusted proxies set up).
+
+**Example:**
+```php
+use BetterRoute\Middleware\Audit\AuditEnricherMiddleware;
+use BetterRoute\Middleware\Audit\AuditMiddleware;
+
+$router->middleware([
+    // ... auth middleware here ...
+    new AuditEnricherMiddleware(
+        staticFields: ['resource' => 'account', 'channel' => 'public-client'],
+        includeClientIp: true
+    ),
+    new AuditMiddleware($logger),
+]);
+```
+
+**Keys added to the audit event:**
+- `authProvider`, `authUserId`, `authSubject` — only fields actually present on the auth attribute.
+- `idempotencyKey` — SHA-1 hash of the `Idempotency-Key` header (never raw).
+- `clientIp` — only when `includeClientIp: true`.
+- Anything in `staticFields`.
+
+**Rules:**
+- Handlers can also write to the `audit` attribute via `$ctx->withAttribute('audit', [...])` — `AuditMiddleware` merges everything before emitting.
+- Keep `staticFields` payloads safe to ship to a log aggregator — no raw tokens or PII.
+- Order: auth → enricher → audit. Enricher before auth means `authUserId` is missing.
+
 ---
 
 ## Skill: Export OpenAPI document
@@ -496,7 +678,7 @@ $contracts = $router->contracts();
 
 $document = $exporter->export($contracts, [
     'title'         => 'My API',
-    'version'       => 'v0.4.0',
+    'version'       => 'v0.5.0',
     'strictSchemas' => true, // throws on missing component refs
     'components'    => \BetterRoute\BetterRoute::wooOpenApiComponents(),
     'securitySchemes' => [
@@ -534,7 +716,7 @@ OpenApiRouteRegistrar::register(
     contractsProvider: static fn (): array => $router->contracts(openApiOnly: true),
     options: [
         'title'   => 'My API',
-        'version' => 'v0.4.0',
+        'version' => 'v0.5.0',
         // To make the doc public, override the admin-only default (since v0.3.0):
         'permissionCallback' => static fn (): bool => true,
     ]
@@ -612,9 +794,11 @@ GET /wp-json/vendor/v1/woo/coupons?code=SUMMER25&fields=id,code,amount,discount_
 **Common error codes:**
 - `400` — validation error, unknown parameters, missing required fields, `validation_failed`, `idempotency_key_required`
 - `401` — `invalid_token`, authentication required
-- `403` — insufficient permissions
+- `403` — insufficient permissions, `forbidden`, `cors_origin_denied` *(v0.5.0)*
 - `404` — resource not found
-- `409` — `idempotency_conflict`, `hpos_required`, duplicate email
+- `409` — `idempotency_conflict`, `idempotency_in_progress` *(v0.5.0)*, `hpos_required`, duplicate email
+- `412` — `precondition_failed`, `optimistic_lock_failed`
+- `429` — `rate_limited`
 - `503` — `woo_unavailable`
 
 **Rules (v0.3.0):**

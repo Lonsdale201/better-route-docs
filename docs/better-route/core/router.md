@@ -39,7 +39,7 @@ add_action('rest_api_init', function (): void {
 - `middleware(array $middlewares): self`
 - `middlewareFactory(callable $factory): self`
 - `group(string $prefix, callable $callback): self`
-- `get/post/put/patch/delete(string $uri, mixed $handler): RouteBuilder`
+- `get/post/put/patch/delete/options(string $uri, mixed $handler): RouteBuilder`
 - `routes(): array`
 - `baseNamespace(): string`
 - `contracts(bool $openApiOnly = false): array`
@@ -88,6 +88,11 @@ Resource-backed endpoints already enforce their own `ResourcePolicy` and are una
 - generated route URIs are normalized (`/x` not `//x/`)
 - `contracts(true)` excludes `openapi.include=false`
 - every write route declares intent via `permission()`, `protectedByMiddleware()`, or `publicRoute()`
+
+## v0.5.0 behavior changes
+
+- `Router::options(string $uri, mixed $handler): RouteBuilder` registers explicit `OPTIONS` routes for CORS preflight. `OPTIONS` permissions default to public so the browser preflight reaches the better-route pipeline (where `CorsMiddleware` short-circuits with `204`).
+- See [Public-Client APIs](../public-client/overview) for the recommended pipeline order.
 
 ## v0.4.0 behavior changes
 

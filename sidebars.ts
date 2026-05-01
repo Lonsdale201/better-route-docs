@@ -38,6 +38,7 @@ const sidebars: SidebarsConfig = {
         'better-route/auth/jwt-bearer',
         'better-route/auth/cookie-nonce',
         'better-route/auth/application-password',
+        'better-route/auth/ownership-guard',
       ],
     },
     {
@@ -45,7 +46,16 @@ const sidebars: SidebarsConfig = {
       label: 'Write Safety',
       items: [
         'better-route/write-safety/idempotency',
+        'better-route/write-safety/atomic-idempotency',
         'better-route/write-safety/optimistic-locking',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Public-Client APIs',
+      items: [
+        'better-route/public-client/overview',
+        'better-route/public-client/cors',
       ],
     },
     {
@@ -100,6 +110,7 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Release Notes',
       items: [
+        'better-route/release-notes/v0.5.0',
         'better-route/release-notes/v0.4.0',
         'better-route/release-notes/v0.3.0',
       ],
